@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI 스마트 비서 — P1 목업</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F5F3;--surface:#FFFFFF;--surface2:#F7F7F5;--surface3:#EEEDE9;
+  --text:#1C1C1A;--text2:#6B6A65;--text3:#9E9D98;
+  --border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.12);
+  --accent:#6C5CE7;--accent-bg:#F0EDFF;--accent2:#5A4BD1;--accent-text:#4A3CB5;
+  --blue:#2563EB;--blue-bg:#EFF6FF;
+  --green:#059669;--green-bg:#ECFDF5;
+  --amber:#D97706;--amber-bg:#FFFBEB;
+  --red:#DC2626;--red-bg:#FEF2F2;
+  --radius:8px;--radius-lg:12px;
+  --font:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+  --shadow:0 2px 8px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.12);
+  --nav-w:56px;--side-w:220px;--panel-w:380px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ========== LAYOUT ========== */
+.app{display:flex;flex-direction:column;height:100vh}
+.app-body{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* LEFT ICON NAV */
+.icon-nav{width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;z-index:20;flex-shrink:0}
+.nav-icon{width:40px;height:40px;border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:16px;transition:all .15s;gap:2px;position:relative}
+.nav-icon:hover{background:var(--surface2);color:var(--text2)}
+.nav-icon.active{color:var(--accent);background:var(--accent-bg)}
+.nav-icon span{font-size:9px;font-weight:500;letter-spacing:-.02em}
+.nav-logo{width:32px;height:32px;margin-bottom:12px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px}
+
+/* LEFT SIDEBAR */
+.left-side{width:var(--side-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.ls-header{padding:14px 16px;border-bottom:1px solid var(--border)}
+.ls-btn{width:100%;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;color:var(--text)}
+.ls-section{padding:12px 16px 6px;font-size:11px;font-weight:600;color:var(--text3)}
+.ls-item{display:flex;align-items:center;gap:8px;padding:7px 16px;font-size:12px;color:var(--text2);cursor:pointer;transition:background .1s}
+.ls-item:hover{background:var(--surface2)}
+.ls-item.active{color:var(--accent);font-weight:500}
+.ls-item .badge{margin-left:auto;font-size:10px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:1px 6px;border-radius:4px}
+.ls-scroll{flex:1;overflow-y:auto;padding-bottom:12px}
+
+/* MAIN CONTENT */
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;transition:margin-right .3s ease}
+.main-area.panel-open{margin-right:0}
+
+/* Project Header */
+.proj-header{background:var(--surface);padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.proj-icon{width:40px;height:40px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.proj-icon svg{width:20px;height:20px;fill:white}
+.proj-info{flex:1}
+.proj-name{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
+.proj-desc{font-size:11px;color:var(--text3)}
+.proj-actions{display:flex;gap:8px;align-items:center}
+.proj-btn{padding:6px 12px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);font-size:12px;cursor:pointer;font-family:var(--font);color:var(--text2);transition:all .15s}
+.proj-btn:hover{background:var(--surface2)}
+.proj-btn.invite{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+
+/* Tabs */
+.tabs{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px}
+.tab{padding:10px 16px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:5px}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab svg{width:14px;height:14px}
+
+/* Feed */
+.feed{flex:1;overflow:hidden;padding:0}
+.feed-inner{height:100%;display:flex}
+.feed-content{flex:1;min-width:0;padding:16px 24px;overflow-y:auto}
+.feed-right{width:280px;border-left:1px solid var(--border);flex-shrink:0;background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.feed-right-scroll{flex:1;overflow-y:auto;padding:16px}
+.feed-right-bottom{flex-shrink:0;border-top:1px solid var(--border);padding:12px;background:var(--surface)}
+.fr-input-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 12px;margin-bottom:8px;cursor:text}
+.fr-input-box .fr-placeholder{font-size:12px;color:var(--text3);line-height:1.5}
+.fr-input-box .fr-example{font-size:11px;color:var(--text3);margin-top:2px}
+.fr-tools{display:flex;align-items:center;gap:4px}
+.fr-tool{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:14px;border:none;background:none}
+.fr-tool:hover{background:var(--surface2);color:var(--text2)}
+.fr-send{width:32px;height:32px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:auto;transition:background .15s}
+.fr-send:hover{background:var(--accent2)}
+.fr-model{display:flex;align-items:center;gap:2px;font-size:11px;color:var(--text3);cursor:pointer;margin-left:auto;padding:4px 8px;border-radius:6px;border:none;background:none}
+.fr-model:hover{background:var(--surface2)}
+
+/* Post Input */
+.post-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:16px}
+.post-tabs{display:flex;gap:0;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.post-tab{padding:4px 12px;font-size:12px;color:var(--text3);cursor:pointer;border-radius:6px}
+.post-tab.active{background:var(--surface2);color:var(--text);font-weight:500}
+.post-field{font-size:13px;color:var(--text3);padding:8px 0}
+.post-toolbar{display:flex;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
+.post-tool{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:14px}
+.post-tool:hover{background:var(--surface2);color:var(--text2)}
+
+/* Feed Items */
+.feed-section-title{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:12px;font-weight:600;color:var(--text2)}
+.feed-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border)}
+.feed-item:hover{background:var(--surface2)}
+.fi-icon{font-size:14px;flex-shrink:0}
+.fi-body{flex:1;min-width:0}
+.fi-title{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-meta{font-size:11px;color:var(--text3)}
+.fi-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+.fi-badge.progress{background:#FFF3E0;color:#E65100}
+.fi-badge.input{background:#E8F5E9;color:#2E7D32}
+.fi-badge.status{background:#E3F2FD;color:#1565C0}
+.fi-count{font-size:11px;color:var(--text3);flex-shrink:0}
+.fi-percent{font-size:11px;font-weight:600;flex-shrink:0}
+.fi-percent.full{color:var(--green)}
+.fi-percent.partial{color:var(--accent)}
+.fi-date{font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap}
+
+/* Participants */
+.part-title{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between}
+.part-section{font-size:11px;font-weight:600;color:var(--text3);padding:10px 0 6px;border-bottom:1px solid var(--border)}
+.part-item{display:flex;align-items:center;gap:8px;padding:6px 0}
+.part-avatar{width:32px;height:32px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text2);overflow:hidden;flex-shrink:0}
+.part-avatar img{width:100%;height:100%;object-fit:cover}
+.part-name{font-size:12px;font-weight:500}
+.part-role{font-size:10px;color:var(--text3)}
+
+/* ========== BOTTOM BAR ========== */
+.bottom-bar{height:48px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;padding:0 20px;gap:10px;flex-shrink:0;position:relative;z-index:60}
+
+.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:8px 14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;animation:toastIn .4s ease;cursor:pointer;max-width:320px;transition:opacity .3s,transform .3s;white-space:nowrap}
+.toast.hiding{opacity:0;transform:translateY(8px)}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.toast-dot.info{background:var(--blue)}
+.toast-dot.warn{background:var(--amber)}
+.toast-dot.ok{background:var(--green)}
+.toast-text{font-size:12px;color:var(--text);line-height:1.4}
+
+.ai-float-btn{height:34px;padding:0 16px;border-radius:8px;border:none;background:var(--text);color:white;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font);transition:all .2s;flex-shrink:0}
+.ai-float-btn:hover{background:#333}
+.ai-float-btn svg{width:16px;height:16px}
+.ai-float-btn .ai-label{font-weight:600;letter-spacing:-.01em}
+
+/* ========== SIDE PANEL ========== */
+.side-panel{position:fixed;top:0;right:0;width:var(--panel-w);height:calc(100vh - 48px);background:var(--surface);border-left:1px solid var(--border);box-shadow:-4px 0 24px rgba(0,0,0,.06);z-index:200;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease}
+.side-panel.open{transform:translateX(0)}
+
+.sp-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sp-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.sp-title .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.sp-close{width:28px;height:28px;border-radius:6px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sp-close:hover{background:var(--surface2);color:var(--text)}
+
+.sp-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 18px}
+.sp-tab{padding:10px 14px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.sp-tab:hover{color:var(--text2)}
+.sp-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.sp-tab.highlight{background:var(--accent);color:white;border-radius:8px;margin:7px 0;border-bottom:none;padding:7px 14px;font-weight:600;font-size:11px;box-shadow:0 1px 3px rgba(108,92,231,.3)}
+.sp-tab.highlight:hover{background:var(--accent2)}
+.sp-tab.highlight.active{color:white;border-bottom-color:transparent;background:var(--accent)}
+
+.sp-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.sp-screen{display:none;flex-direction:column;flex:1;min-height:0}
+.sp-screen.active{display:flex}
+
+/* Chat screen */
+.sp-messages{flex:1;overflow-y:auto;padding:14px 18px}
+.sp-msg{margin-bottom:14px;animation:msgIn .25s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.sp-msg .msg-name{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:3px}
+.sp-msg .msg-bubble{font-size:12.5px;line-height:1.65;padding:10px 14px;border-radius:2px 12px 12px 12px;background:var(--surface2)}
+.sp-msg .msg-bubble h3{font-size:13px;font-weight:600;margin:12px 0 6px;display:flex;align-items:center;gap:6px}
+.sp-msg .msg-bubble h3:first-child{margin-top:0}
+.sp-msg .msg-bubble ul{padding-left:16px;margin:4px 0}
+.sp-msg .msg-bubble ul ul{padding-left:14px}
+.sp-msg .msg-bubble li{margin:2px 0;font-size:12px}
+.sp-msg .msg-bubble hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+.sp-msg .msg-bubble .sensitive{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--green);background:var(--green-bg);padding:2px 8px;border-radius:4px;margin-bottom:8px}
+.sp-msg .msg-bubble .report-bar{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:8px 12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)}
+.sp-msg .msg-bubble .report-bar span{font-size:11px;color:var(--text3)}
+.sp-msg .msg-bubble .report-btn{padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:white;font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)}
+.sp-msg .msg-bubble .followup{margin-top:10px;font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:4px}
+.sp-msg .msg-bubble .followup-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.sp-msg .msg-bubble .followup-item{padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;color:var(--text);background:var(--surface)}
+.sp-msg .msg-bubble .followup-item:hover{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text)}
+.sp-msg .msg-bubble .msg-actions{display:flex;gap:8px;margin-top:10px;color:var(--text3)}
+.sp-msg .msg-bubble .msg-actions span{cursor:pointer;font-size:14px;transition:color .15s}
+.sp-msg .msg-bubble .msg-actions span:hover{color:var(--text)}
+.sp-msg.user .msg-bubble{background:var(--accent);color:white;border-radius:12px 2px 12px 12px;margin-left:40px}
+.sp-msg.user .msg-name{text-align:right}
+
+.sp-quick{padding:0 18px 8px;flex-shrink:0}
+.sp-quick-title{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.sp-quick-list{display:flex;flex-direction:column;gap:4px}
+.sp-quick-item{padding:9px 14px;border-radius:var(--radius);border:1px solid var(--border);font-size:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;color:var(--text)}
+.sp-quick-item:hover{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text)}
+.sp-quick-item .arrow{color:var(--text3);font-size:14px}
+
+.sp-input-area{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:flex-end;background:var(--surface);flex-shrink:0}
+.sp-input-row{flex:1;position:relative}
+.sp-input{width:100%;padding:9px 12px;padding-right:36px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);outline:none;background:var(--surface2);transition:border .2s;resize:none;min-height:58px;max-height:100px;line-height:1.5}
+.sp-input:focus{border-color:var(--accent);background:var(--surface)}
+.sp-input::placeholder{color:var(--text3)}
+.sp-send{position:absolute;right:6px;bottom:6px;width:28px;height:28px;border-radius:6px;border:none;background:var(--accent);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.sp-send:hover{background:var(--accent2)}
+.sp-send svg{width:14px;height:14px}
+.sp-input-tools{display:flex;gap:2px;padding:4px 14px 8px;flex-shrink:0}
+.sp-tool{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:14px;border:none;background:none;font-family:var(--font)}
+.sp-tool:hover{background:var(--surface2);color:var(--text2)}
+
+/* Briefing screen */
+.sp-briefing{padding:14px 18px;overflow-y:auto;flex:1}
+
+/* AI Summary hero card */
+.brief-hero{background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px;color:white;position:relative;overflow:hidden}
+.brief-hero::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1)}
+.brief-hero::before{content:'';position:absolute;bottom:-10px;left:-10px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.06)}
+.brief-hero .hero-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;opacity:.8;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.brief-hero .hero-title{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.4}
+.brief-hero .hero-body{font-size:12px;line-height:1.7;opacity:.92}
+.brief-hero .hero-body strong{color:white;font-weight:600}
+.brief-hero .hero-stats{display:flex;gap:10px;margin-top:12px}
+.brief-hero .stat{background:rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;flex:1;text-align:center;backdrop-filter:blur(4px)}
+.brief-hero .stat-num{font-size:18px;font-weight:700;line-height:1}
+.brief-hero .stat-label{font-size:9px;opacity:.8;margin-top:2px;font-weight:500}
+.brief-hero-actions{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.brief-hero-action{padding:8px 12px;border-radius:var(--radius);background:rgba(255,255,255,.15);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;color:white;backdrop-filter:blur(4px)}
+.brief-hero-action:hover{background:rgba(255,255,255,.28)}
+
+/* Section cards */
+.brief-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.brief-label{font-size:11px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.brief-label .dot{width:7px;height:7px;border-radius:50%}
+.brief-label .count{font-size:10px;font-weight:500;color:var(--text3);margin-left:auto}
+
+.b-task{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12px;border-radius:var(--radius);transition:background .1s;margin:0 -4px}
+.b-task:not(:last-child){border-bottom:1px solid var(--border);border-radius:0}
+.b-task:hover{background:var(--surface2)}
+.b-task .pri{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.b-task .pri.h{background:var(--red)}.b-task .pri.m{background:var(--amber)}.b-task .pri.l{background:var(--green)}
+.b-task .info{flex:1;min-width:0}
+.b-task .name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b-task .meta{font-size:10px;color:var(--text3);margin-top:1px}
+.b-task .badge{font-size:9px;font-weight:600;padding:3px 8px;border-radius:6px;flex-shrink:0}
+.b-task .badge.urgent{background:var(--red-bg);color:var(--red)}
+.b-task .badge.soon{background:var(--amber-bg);color:var(--amber)}
+.b-task .badge.ok{background:var(--green-bg);color:var(--green)}
+
+.b-schedule{display:flex;gap:10px;padding:8px 6px;font-size:12px;align-items:center}
+.b-schedule:not(:last-child){border-bottom:1px solid var(--border)}
+.b-schedule .time{font-weight:600;color:var(--accent);min-width:40px;font-size:11px;font-variant-numeric:tabular-nums}
+.b-schedule .bar{width:3px;height:28px;border-radius:2px;flex-shrink:0}
+.b-schedule .s-info{flex:1}
+.b-schedule .s-title{font-weight:500}
+.b-schedule .s-meta{font-size:10px;color:var(--text3);margin-top:1px}
+
+.brief-summary{font-size:12px;color:var(--text2);line-height:1.7;padding:8px 0}
+.brief-actions{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+.brief-action{padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;color:var(--text)}
+.brief-action:hover{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text)}
+
+/* Chat history screen */
+
+/* ── Post Preview Popup (Flow-style) ── */
+.popup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.popup-overlay.open{opacity:1;pointer-events:auto}
+.popup-box{background:var(--surface);border-radius:var(--radius-lg);width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2);transform:translateY(12px);transition:transform .25s;overflow:hidden}
+.popup-overlay.open .popup-box{transform:translateY(0)}
+.popup-top{display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);flex-shrink:0}
+.popup-top .proj-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.popup-top .proj-dot.pink{background:#E879A8}
+.popup-top .proj-dot.blue{background:var(--blue)}
+.popup-top .proj-dot.green{background:var(--green)}
+.popup-close{margin-left:auto;width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:16px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.popup-close:hover{background:var(--surface2);color:var(--text)}
+.popup-scroll{flex:1;overflow-y:auto;padding:20px}
+.popup-author{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.popup-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--text2)}
+.popup-author-info .a-name{font-size:13px;font-weight:600}
+.popup-author-info .a-meta{font-size:11px;color:var(--text3)}
+.popup-author-actions{margin-left:auto;display:flex;gap:6px}
+.popup-author-actions a{font-size:11px;color:var(--text3);text-decoration:underline;cursor:pointer}
+.popup-title{font-size:17px;font-weight:700;margin-bottom:4px}
+.popup-subtitle{font-size:12px;color:var(--text3);margin-bottom:16px}
+
+/* Post popup fields */
+.popup-field{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.popup-field:last-child{border-bottom:none}
+.popup-field .f-label{font-size:12px;color:var(--text3);min-width:50px;flex-shrink:0}
+.popup-field .f-value{font-size:13px;font-weight:500}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600}
+.status-badge.green{background:var(--green-bg);color:var(--green)}
+.status-badge.amber{background:var(--amber-bg);color:var(--amber)}
+.status-badge.blue{background:var(--blue-bg);color:var(--blue)}
+.assignee-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:var(--surface2);font-size:11px;font-weight:500;margin-right:4px}
+.assignee-chip .chip-avatar{width:18px;height:18px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--text2)}
+.group-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:var(--surface2);font-size:11px;font-weight:500}
+
+/* Sub-tasks */
+.popup-subtasks{margin-top:16px}
+.popup-subtasks-title{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.subtask-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:4px;font-size:12px}
+.subtask-item .st-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;flex-shrink:0}
+.subtask-item .st-status.done{background:var(--green-bg);color:var(--green)}
+.subtask-item .st-status.progress{background:var(--amber-bg);color:var(--amber)}
+.subtask-item .st-status.todo{background:var(--surface2);color:var(--text3)}
+.subtask-item .st-name{flex:1}
+.subtask-item .st-date{font-size:10px;color:var(--text3);flex-shrink:0}
+.subtask-item .st-avatar{width:22px;height:22px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--text2);flex-shrink:0}
+
+/* Schedule popup */
+.popup-cal{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.popup-cal-box{background:var(--green-bg);border-radius:var(--radius);padding:8px 14px;text-align:center}
+.popup-cal-box .cal-month{font-size:10px;font-weight:600;color:var(--green)}
+.popup-cal-box .cal-day{font-size:24px;font-weight:700;color:var(--green)}
+.popup-cal-info .cal-title{font-size:15px;font-weight:700}
+.popup-cal-info .cal-time{font-size:12px;color:var(--text3)}
+.popup-attendees{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:8px 0}
+.att-circle{width:30px;height:30px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--text2);border:2px solid var(--surface);position:relative}
+.att-circle .online{position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:var(--green);border:2px solid var(--surface)}
+.att-stats{display:flex;gap:10px;font-size:11px;margin-top:4px}
+.att-stats .yes{color:var(--green);font-weight:600}
+.att-stats .no{color:var(--red);font-weight:600}
+.att-stats .maybe{color:var(--text3)}
+
+.popup-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);flex-shrink:0}
+.popup-footer span{cursor:pointer}
+.popup-footer span:hover{color:var(--text2)}
+.popup-footer .read-count{margin-left:auto}
+
+/* Preview link in chat */
+.preview-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;margin-top:4px}
+.preview-link:hover{color:var(--accent2)}
+
+/* ── Reminder Screen ── */
+.sp-reminder{padding:14px 18px;overflow-y:auto;flex:1}
+.rem-section{margin-bottom:18px}
+.rem-section-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.rem-section-title .rem-count{font-size:11px;font-weight:500;color:var(--text3);margin-left:auto}
+.rem-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:6px;transition:border-color .15s}
+.rem-card:hover{border-color:var(--accent-bg)}
+.rem-card.ai-card{border-color:var(--accent-bg);background:#FDFCFF}
+.rem-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.rem-type{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px}
+.rem-type.system{background:var(--blue-bg);color:var(--blue)}
+.rem-type.ai{background:var(--accent-bg);color:var(--accent)}
+.rem-type.user{background:var(--green-bg);color:var(--green)}
+.rem-time{font-size:10px;color:var(--text3);font-weight:500;display:flex;align-items:center;gap:6px}
+.rem-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.rem-desc{font-size:11px;color:var(--text3);line-height:1.4}
+.rem-actions{display:flex;gap:4px;margin-top:8px}
+.rem-actions button{padding:5px 10px;border-radius:6px;font-size:10px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s}
+.rem-actions button:hover{border-color:var(--accent);color:var(--accent)}
+.rem-actions button.rem-primary{background:var(--accent);color:white;border-color:var(--accent)}
+.rem-actions button.rem-primary:hover{background:var(--accent2)}
+.rem-toggle{position:relative;width:32px;height:18px;background:var(--surface3);border-radius:9px;cursor:pointer;transition:background .2s;flex-shrink:0}
+.rem-toggle.on{background:var(--accent)}
+.rem-toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.rem-toggle.on::after{transform:translateX(14px)}
+.rem-add{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;border:2px dashed var(--border);border-radius:var(--radius);font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;background:none;width:100%;font-family:var(--font);transition:all .15s}
+.rem-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.rem-ai-rec{border-style:dashed;border-color:var(--accent-bg)}
+
+/* Reminder Form */
+.rem-form{background:var(--surface);border:1px solid var(--accent-bg);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(108,92,231,.08)}
+.rem-form-title{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.rem-form-field{margin-bottom:10px}
+.rem-form-field label{display:block;font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.rem-input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);outline:none;background:var(--surface2);transition:border .2s}
+.rem-input:focus{border-color:var(--accent);background:var(--surface)}
+.rem-select-row{display:flex;gap:4px;flex-wrap:wrap}
+.rem-chip{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font);color:var(--text2);transition:all .15s}
+.rem-chip:hover{border-color:var(--accent);color:var(--accent)}
+.rem-chip.active{background:var(--accent);color:white;border-color:var(--accent)}
+.rem-day{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font);color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.rem-day:hover{border-color:var(--accent);color:var(--accent)}
+.rem-day.active{background:var(--accent);color:white;border-color:var(--accent)}
+.rem-form-actions{display:flex;gap:6px;margin-top:14px;justify-content:flex-end}
+.rem-form-cancel{padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);color:var(--text2)}
+.rem-form-submit{padding:7px 18px;border-radius:var(--radius);border:none;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)}
+
+/* ── Tool Use Steps (Sequential Animation) ── */
+.tool-steps{display:flex;flex-direction:column;gap:0;margin:8px 0 12px}
+.tool-step{display:flex;align-items:stretch;gap:0;opacity:0;transform:translateY(6px);transition:opacity .4s ease,transform .4s ease}
+.tool-step.visible{opacity:1;transform:translateY(0)}
+.tool-step-rail{width:22px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.tool-step-dot{width:9px;height:9px;border-radius:50%;background:var(--surface3);flex-shrink:0;margin-top:7px;transition:background .3s,box-shadow .3s}
+.tool-step.done .tool-step-dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.tool-step.running .tool-step-dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);animation:dotPulse 1.2s ease infinite}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 0 3px var(--accent-bg)}50%{box-shadow:0 0 0 6px rgba(108,92,231,.12)}}
+.tool-step-line{width:2px;flex:1;background:var(--surface3);transition:background .3s}
+.tool-step.done .tool-step-line{background:var(--accent-bg)}
+.tool-step:last-child .tool-step-line{display:none}
+.tool-step-body{flex:1;padding:3px 0 12px 8px;min-width:0}
+.tool-step-header{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.tool-step-icon{font-size:13px}
+.tool-step-label{font-size:12px;font-weight:600;color:var(--text2)}
+.tool-step.running .tool-step-label{color:var(--accent)}
+.tool-step-status{margin-left:auto;font-size:10px;font-weight:500;color:var(--text3)}
+.tool-step.done .tool-step-status{color:var(--green)}
+.tool-step.running .tool-step-status{color:var(--accent)}
+.tool-step-spinner{width:11px;height:11px;border:2px solid var(--accent-bg);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-left:auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tool-step-detail{margin-top:0;padding:0 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2);line-height:1.5;max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease,opacity .3s ease,margin .3s ease,padding .3s ease}
+.tool-step-detail.expanded{max-height:200px;opacity:1;margin-top:5px;padding:6px 8px}
+.tool-step-detail code{font-size:10px;background:var(--surface3);padding:1px 4px;border-radius:3px;color:var(--text2);font-family:monospace}
+.tool-step-detail .found-tag{display:inline-block;font-size:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 6px;margin:2px 2px 0 0;color:var(--text2)}
+.tool-step-detail .found-count{font-weight:600;color:var(--accent)}
+
+/* Approval bar */
+.approval-bar{display:flex;gap:6px;margin-top:10px}
+.btn-approve{flex:1;padding:8px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:all .15s}
+.btn-approve.primary{background:var(--accent);color:white}
+.btn-approve.primary:hover{background:var(--accent2)}
+.btn-approve.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-approve.secondary:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Redesigned action buttons - visually distinct */
+.action-group{margin-top:14px}
+.action-group-title{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px}
+.action-primary-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border-radius:var(--radius);border:none;background:var(--accent);color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;margin-bottom:6px}
+.action-primary-btn:hover{background:var(--accent2)}
+.action-secondary-row{display:flex;gap:6px}
+.action-secondary-btn{flex:1;padding:8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all .15s;text-align:center}
+.action-secondary-btn:hover{border-color:var(--text3);color:var(--text)}
+
+/* AI Suggestion badges - inline in task list */
+.ai-suggest-badge{font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.ai-suggest-badge.auto{background:var(--accent-bg);color:var(--accent)}
+.ai-suggest-badge.assist{background:var(--amber-bg);color:var(--amber)}
+
+/* Task row in result */
+.task-row{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.task-row:hover{background:var(--surface2)}
+.task-row strong{flex:1;font-size:11px;font-weight:500}
+.task-row-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.task-row-date{font-size:10px;color:var(--text3)}
+.task-row-date.urgent{color:var(--red);font-weight:600}
+.task-row-date.warn{color:var(--amber)}
+.task-row.changed{background:var(--accent-bg);border-left:3px solid var(--accent)}
+.task-row.changed strong{color:var(--accent)}
+.task-row.added{background:var(--green-bg);border-left:3px solid var(--green)}
+.task-row.added strong{color:var(--green)}
+.change-badge{font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0}
+.change-badge.modified{background:var(--accent-bg);color:var(--accent)}
+.change-badge.new{background:var(--green-bg);color:var(--green)}
+.schedule-row{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px}
+.schedule-row.changed{background:var(--accent-bg);border-left:3px solid var(--accent);padding-left:8px;border-radius:2px}
+.schedule-row.added{background:var(--green-bg);border-left:3px solid var(--green);padding-left:8px;border-radius:2px}
+
+/* Publish success */
+.publish-success{text-align:left;background:var(--green-bg);border:1px solid var(--green);border-radius:var(--radius);padding:12px;margin:8px 0}
+.publish-success .ps-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.publish-success .ps-icon{width:28px;height:28px;border-radius:50%;background:var(--green);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.publish-success .ps-title{font-size:13px;font-weight:700;color:#166534}
+.publish-success .ps-sub{font-size:11px;color:var(--green)}
+.publish-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#166534;padding:3px 0}
+.publish-item .p-check{margin-left:auto;color:var(--green);font-weight:600}
+
+.sp-history{padding:14px 18px;overflow-y:auto;flex:1}
+.hist-item{padding:10px 12px;border-radius:var(--radius);cursor:pointer;transition:background .15s;border-bottom:1px solid var(--border)}
+.hist-item:hover{background:var(--surface2)}
+.hist-title{font-size:12px;font-weight:500}
+.hist-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.hist-preview{font-size:11px;color:var(--text2);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Task progress in panel */
+.sp-progress{display:flex;align-items:center;gap:6px;padding:8px 18px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.sp-step{font-size:10px;color:var(--text3);font-weight:500;display:flex;align-items:center;gap:3px}
+.sp-step.done{color:var(--green)}
+.sp-step.current{color:var(--accent)}
+.sp-step-dot{width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.sp-step.done .sp-step-dot{background:var(--green);border-color:var(--green);color:white}
+.sp-step.current .sp-step-dot{background:var(--accent-bg);border-color:var(--accent)}
+.sp-step-line{flex:1;height:1px;background:var(--border)}
+
+/* Reminder toast actions */
+.toast-actions{display:flex;gap:4px;margin-top:4px}
+.toast-btn{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);font-family:var(--font);transition:all .15s}
+.toast-btn:hover{border-color:var(--accent);color:var(--accent)}
+.toast-btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
+
+/* Animations */
+.fade-in{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="app-body">
+<!-- ICON NAV -->
+<div class="icon-nav">
+  <div class="nav-logo">f</div>
+  <div class="nav-icon" title="대시보드">📊<span>대시보드</span></div>
+  <div class="nav-icon active" title="프로젝트">📁<span>프로젝트</span></div>
+  <div class="nav-icon" title="캘린더">📅<span>캘린더</span></div>
+  <div class="nav-icon" title="메일">✉️<span>메일</span></div>
+  <div class="nav-icon" title="전자결재">📝<span>전자결재</span></div>
+  <div class="nav-icon" title="미팅노트">🎙<span>미팅노트</span></div>
+  <div class="nav-icon" title="위키">📖<span>위키</span></div>
+  <div style="flex:1"></div>
+  <div class="nav-icon" style="color:var(--accent);font-weight:600" title="AI 비서">🤖<span style="color:var(--accent)">AI</span></div>
+  <div class="nav-icon" title="OKR">🎯<span>OKR</span></div>
+  <div class="nav-icon" title="더보기">⋯<span>더보기</span></div>
+</div>
+
+<!-- LEFT SIDEBAR -->
+<div class="left-side">
+  <div class="ls-header">
+    <button class="ls-btn">➕ 새 프로젝트 추가</button>
+  </div>
+  <div class="ls-scroll">
+    <div class="ls-item" style="padding-top:12px">내 프로젝트 <span class="badge">215</span></div>
+    <div class="ls-item">🔍 회사 공개 프로젝트</div>
+    <div class="ls-item">⋯ 더보기</div>
+    <div class="ls-section">모아보기</div>
+    <div class="ls-item">☰ 전체 업무</div>
+    <div class="ls-item">📊 간트차트</div>
+    <div class="ls-item active">📅 캘린더</div>
+    <div class="ls-item">📂 파일함</div>
+    <div class="ls-item">🔖 북마크</div>
+    <div class="ls-item">@ 나를 언급</div>
+    <div class="ls-item">✏️ 내 게시물</div>
+    <div class="ls-item">📋 임시저장</div>
+    <div class="ls-item">🗑 휴지통</div>
+    <div class="ls-section">최근 업데이트</div>
+    <div class="ls-item" style="font-size:11px;color:var(--text3)">프로젝트 폴더 ➕</div>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div class="main-area" id="mainArea">
+  <!-- Project Header -->
+  <div class="proj-header">
+    <div class="proj-icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+    <div class="proj-info">
+      <div class="proj-name">플로우 홈페이지 개발 및 운영관리 ⭐ <span style="font-size:11px;color:var(--text3);font-weight:400">✏️</span></div>
+      <div class="proj-desc">디자인 관련된 모든 요청을 할 수 있는 프로젝트입니다.</div>
+    </div>
+    <div class="proj-actions">
+      <button class="proj-btn invite">👥+ 초대하기</button>
+      <span style="font-size:12px;color:var(--text3)">총 154,666</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active">📝 피드</div>
+    <div class="tab">☰ 업무</div>
+    <div class="tab">📊 인사이트</div>
+    <div class="tab">📊 간트차트</div>
+    <div class="tab">📅 캘린더</div>
+    <div class="tab">📁 파일</div>
+    <div class="tab">🔔 알림</div>
+    <div class="tab">👥 인사이트</div>
+  </div>
+
+  <!-- Feed -->
+  <div class="feed">
+    <div class="feed-inner">
+      <div class="feed-content">
+        <!-- Post Input -->
+        <div class="post-input">
+          <div class="post-tabs">
+            <div class="post-tab active">📄 글</div>
+            <div class="post-tab">☰ 업무</div>
+            <div class="post-tab">📅 일정</div>
+            <div class="post-tab">☑️ 할일</div>
+          </div>
+          <div class="post-field">글을 입력해주세요.</div>
+          <div class="post-toolbar">
+            <div class="post-tool">📎</div>
+            <div class="post-tool">🖼</div>
+            <div class="post-tool">📍</div>
+            <div class="post-tool">#</div>
+            <div class="post-tool">@</div>
+            <div class="post-tool">T</div>
+          </div>
+        </div>
+
+        <!-- Feed List -->
+        <div class="feed-section-title">전체 게시글 <span style="display:flex;gap:8px;align-items:center"><span style="font-weight:400;color:var(--text3)">자세히 ▾ 필터</span></span></div>
+
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "글작성" 상단고정 케이스</div></div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "일정" 상단고정 케이스</div></div><div class="fi-date">2025-05-25 18:00</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "업무명" 상단고정 케이스 자세히보기 "업무명"...</div><div class="fi-meta">(24)</div></div><div class="fi-badge status">● 상태 가장 긴케이…</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "업무명" 상단고정 케이스</div><div class="fi-meta">🔒 (24)</div></div><div class="fi-badge progress">● 진행중</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "업무명" 상단고정 케이스</div><div class="fi-meta">(24)</div></div><div class="fi-badge input">● 사용자 입력</div></div>
+        <div class="feed-item" style="background:var(--accent-bg)"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title" style="color:var(--accent)">자세히보기 "업무명" 상단고정 케이스 자세히 보기 "업무…</div><div class="fi-meta">🔒 (24)</div></div><div class="fi-badge status">● 상태 가장 긴케이…</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "업무명" 상단고정 케이스</div><div class="fi-meta">(24)</div></div><div class="fi-badge progress">● 진행중</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "업무명" 상단고정 케이스</div><div class="fi-meta">(24)</div></div><div class="fi-badge input">● 사용자 입력</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "할일" 상단고정 케이스 모두 "완료"했을때 자세히보…</div></div><div class="fi-percent full">100%</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "할일" 상단고정 케이스 "진행중"일때</div></div><div class="fi-percent partial">40%</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "투표" 상단고정 케이스 종료시 🔒</div></div><div class="fi-count">종료</div></div>
+        <div class="feed-item"><div class="fi-icon">📌</div><div class="fi-body"><div class="fi-title">자세히보기 "투표" 상단고정 케이스 진행중일때</div></div><div class="fi-badge progress">진행중</div></div>
+        <div class="feed-item"><div class="fi-icon">📄</div><div class="fi-body"><div class="fi-title">자세히보기 "일정" 노출 케이스</div><div class="fi-meta">김원모 2020-08-24 16:24</div></div><div class="fi-date">2025-05-25 18:00</div></div>
+        <div class="feed-item"><div class="fi-icon">📄</div><div class="fi-body"><div class="fi-title">자세히보기 "글작성" 노출 케이스</div><div class="fi-meta">김원모 2020-08-24 16:24</div></div></div>
+      </div>
+
+      <!-- Right: Participants -->
+      <div class="feed-right" id="feedRight">
+        <div class="feed-right-scroll">
+          <div class="part-title">참여자 (878) <span style="font-weight:400;color:var(--accent);cursor:pointer">전체확인</span></div>
+          <div class="part-section">가입 신청자 (567)</div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 외 1 명 <span style="background:var(--red);color:white;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:600">N</span></div></div></div>
+          <div class="part-section">관리자 (567)</div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-section">내부 참여자 (567)</div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-section">외부 참여자 (567)</div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+          <div class="part-item"><div class="part-avatar">김</div><div><div class="part-name">김원석 <span style="font-weight:400;color:var(--text3)">매니저</span></div><div class="part-role">신한투자증권 금융팀</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- end app-body -->
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar" id="bottomBar">
+  <div id="toastContainer"></div>
+  <button class="ai-float-btn" id="aiBtn" onclick="togglePanel()">
+    <span>🤖</span>
+    <span class="ai-label">AI 스마트 비서</span>
+  </button>
+</div>
+
+<!-- SIDE PANEL -->
+<div class="side-panel" id="sidePanel">
+  <div class="sp-header">
+    <div class="sp-title"><span class="ai-dot"></span> AI 스마트 비서</div>
+    <button class="sp-close" onclick="togglePanel()">✕</button>
+  </div>
+  <div class="sp-tabs">
+    <div class="sp-tab active" data-tab="chat" onclick="switchTab('chat')">새 채팅</div>
+    <div class="sp-tab" data-tab="history" onclick="switchTab('history')">채팅 내역</div>
+    <div class="sp-tab" data-tab="reminder" onclick="switchTab('reminder')">🔔 리마인더</div>
+    <div class="sp-tab highlight" data-tab="briefing" onclick="switchTab('briefing')" style="margin-left:auto">브리핑 리포트</div>
+  </div>
+
+  <div class="sp-body">
+    <!-- CHAT TAB -->
+    <div class="sp-screen active" id="tab-chat">
+      <div class="sp-messages" id="spMsgs">
+        <div class="sp-msg">
+          <div class="msg-name">AI 비서</div>
+          <div class="msg-bubble">{사용자} 님, 필요한 일이 있으면 편하게 말씀해주세요.</div>
+        </div>
+      </div>
+      <div class="sp-quick" id="quickSection">
+        <div class="sp-quick-title">💡 무엇을 도와드릴까요?</div>
+        <div class="sp-quick-list">
+          <div class="sp-quick-item" onclick="quickAction('briefing')">지금 시간 기준으로 업무 브리핑 해줘<span class="arrow">›</span></div>
+          <div class="sp-quick-item" onclick="quickAction('change')">어제 퇴근 후 변경된 사항 있어?<span class="arrow">›</span></div>
+          <div class="sp-quick-item" onclick="quickAction('schedule')">이번주 스케줄 관리해줘<span class="arrow">›</span></div>
+          <div class="sp-quick-item" onclick="quickAction('todo')">지금 할 수 있는 업무 알려줘<span class="arrow">›</span></div>
+          <div class="sp-quick-item" onclick="quickAction('newtask')">새로운 업무 진행해줘<span class="arrow">›</span></div>
+        </div>
+      </div>
+      <div class="sp-input-area">
+        <div class="sp-input-row">
+          <textarea class="sp-input" id="spInput" rows="1" placeholder='AI 비서에게 업무를 직접 요청해 보세요.&#10;예) "2026 AI 박람회" 준비해줘.' onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendPanelMsg()}"></textarea>
+          <button class="sp-send" onclick="sendPanelMsg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+        </div>
+      </div>
+      <div class="sp-input-tools">
+        <button class="sp-tool" title="파일 첨부">➕</button>
+        <button class="sp-tool" title="이미지">🖼</button>
+        <button class="sp-tool" title="설정">⚙️</button>
+        <div style="flex:1"></div>
+        <button class="sp-tool" title="모델">🧠 ▾</button>
+      </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div class="sp-screen" id="tab-history">
+      <div class="sp-history">
+        <div class="hist-item">
+          <div class="hist-title">Q1 보고서 발표 자료 준비</div>
+          <div class="hist-meta">오늘 09:30 · 완료</div>
+          <div class="hist-preview">디자인팀 Q1 성과와 Q2 계획 위주로 정리된 5페이지 발표 자료를 마케팅팀 프로젝트에 게시 완료.</div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-title">디자인 리뷰 안건 정리</div>
+          <div class="hist-meta">오늘 08:15 · 완료</div>
+          <div class="hist-preview">디자인 시스템 컴포넌트 관련 리뷰 안건 3건을 정리하여 게시.</div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-title">주간 업무 요약</div>
+          <div class="hist-meta">지난 금요일 17:00 · 완료</div>
+          <div class="hist-preview">이번주 완료 업무 12건, 진행중 5건, 다음주 예정 3건 요약.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMINDER TAB -->
+    <div class="sp-screen" id="tab-reminder">
+      <div class="sp-reminder">
+        <div class="rem-section">
+          <div class="rem-section-title">🔔 활성 리마인더 <span class="rem-count">5건</span></div>
+
+          <div class="rem-card">
+            <div class="rem-top"><span class="rem-type system">시스템</span><span class="rem-time">오늘 14:30</span></div>
+            <div class="rem-title">Q1 보고서 발표 30분 전</div>
+            <div class="rem-desc">Q1 보고서 발표 · 대회의실 · 14:00~15:00</div>
+          </div>
+
+          <div class="rem-card ai-card">
+            <div class="rem-top"><span class="rem-type ai">AI 판단</span><span class="rem-time">오늘 11:00</span></div>
+            <div class="rem-title">API 스펙 피드백 미회신 감지</div>
+            <div class="rem-desc">박민수 과장 요청 건 · 2일째 대기 중<br>회신하지 않으면 일정에 영향이 있을 수 있어요.</div>
+            <div class="rem-actions">
+              <button class="rem-primary" onclick="switchTab('chat');setTimeout(function(){document.getElementById('spInput').value='API 스펙 피드백 회신 초안 작성해줘';sendPanelMsg()},300)">지금 회신하기</button>
+              <button>내일 다시 알림</button>
+              <button>무시</button>
+            </div>
+          </div>
+
+          <div class="rem-card">
+            <div class="rem-top"><span class="rem-type user">사용자 설정</span><span class="rem-time">매일 08:00 <span class="rem-toggle on" onclick="this.classList.toggle('on')"></span></span></div>
+            <div class="rem-title">오늘 업무 브리핑 해줘</div>
+            <div class="rem-desc">매일 · AI 실행 · 결과 알림</div>
+          </div>
+
+          <div class="rem-card">
+            <div class="rem-top"><span class="rem-type user">사용자 설정</span><span class="rem-time">매일 18:00 <span class="rem-toggle on" onclick="this.classList.toggle('on')"></span></span></div>
+            <div class="rem-title">오늘 미완료 업무 정리해줘</div>
+            <div class="rem-desc">매일 · AI 실행 · 결과 알림</div>
+          </div>
+
+          <div class="rem-card">
+            <div class="rem-top"><span class="rem-type user">사용자 설정</span><span class="rem-time">매주 금 09:00 <span class="rem-toggle on" onclick="this.classList.toggle('on')"></span></span></div>
+            <div class="rem-title">이번주 업무 요약해줘</div>
+            <div class="rem-desc">매주 금요일 · AI 실행 · 결과 알림</div>
+          </div>
+        </div>
+
+        <button class="rem-add" id="remAddBtn" onclick="document.getElementById('remAddForm').style.display='block';this.style.display='none'">＋ 새 리마인더 추가</button>
+
+        <div id="remAddForm" class="rem-form" style="display:none">
+          <div class="rem-form-title">🔔 새 리마인더 추가</div>
+          <div class="rem-form-field">
+            <label>실행할 내용</label>
+            <input type="text" id="remContent" placeholder="예) 오늘 미완료 업무 정리해줘" class="rem-input">
+          </div>
+          <div class="rem-form-field">
+            <label>반복</label>
+            <div class="rem-select-row">
+              <button class="rem-chip active" onclick="remChipSelect(this)">매일</button>
+              <button class="rem-chip" onclick="remChipSelect(this)">매주</button>
+              <button class="rem-chip" onclick="remChipSelect(this)">매월</button>
+              <button class="rem-chip" onclick="remChipSelect(this)">한 번만</button>
+            </div>
+          </div>
+          <div class="rem-form-field">
+            <label>요일</label>
+            <div class="rem-select-row">
+              <button class="rem-day" onclick="this.classList.toggle('active')">월</button>
+              <button class="rem-day" onclick="this.classList.toggle('active')">화</button>
+              <button class="rem-day" onclick="this.classList.toggle('active')">수</button>
+              <button class="rem-day" onclick="this.classList.toggle('active')">목</button>
+              <button class="rem-day" onclick="this.classList.toggle('active')">금</button>
+              <button class="rem-day" onclick="this.classList.toggle('active')">토</button>
+              <button class="rem-day" onclick="this.classList.toggle('active')">일</button>
+            </div>
+          </div>
+          <div class="rem-form-field">
+            <label>시간</label>
+            <input type="time" id="remTime" value="09:00" class="rem-input" style="width:120px">
+          </div>
+          <div class="rem-form-field">
+            <label>실행 방식</label>
+            <div class="rem-select-row">
+              <button class="rem-chip active" onclick="remChipSelect(this)">🤖 AI 자동 실행</button>
+              <button class="rem-chip" onclick="remChipSelect(this)">🔔 알림만</button>
+            </div>
+          </div>
+          <div class="rem-form-actions">
+            <button class="rem-form-cancel" onclick="document.getElementById('remAddForm').style.display='none';document.getElementById('remAddBtn').style.display='flex'">취소</button>
+            <button class="rem-form-submit" onclick="submitReminder()">등록</button>
+          </div>
+        </div>
+
+        <div class="rem-section" style="margin-top:18px">
+          <div class="rem-section-title">💡 AI 추천 리마인더</div>
+
+          <div class="rem-card rem-ai-rec">
+            <div class="rem-top"><span class="rem-type ai">AI 추천</span></div>
+            <div class="rem-title">미팅 30분 전 브리핑 자동 생성</div>
+            <div class="rem-desc">외부 미팅이 있을 때, 30분 전에 관련 자료와 안건을 자동으로 브리핑해드려요.</div>
+            <div class="rem-actions">
+              <button class="rem-primary">활성화</button>
+              <button>괜찮아요</button>
+            </div>
+          </div>
+
+          <div class="rem-card rem-ai-rec">
+            <div class="rem-top"><span class="rem-type ai">AI 추천</span></div>
+            <div class="rem-title">마감 D-1 업무 자동 알림</div>
+            <div class="rem-desc">마감일 하루 전에 해당 업무 상태와 남은 할 일을 정리해서 알려드려요.</div>
+            <div class="rem-actions">
+              <button class="rem-primary">활성화</button>
+              <button>괜찮아요</button>
+            </div>
+          </div>
+
+          <div class="rem-card rem-ai-rec">
+            <div class="rem-top"><span class="rem-type ai">AI 추천</span></div>
+            <div class="rem-title">2일 이상 미회신 업무 감지</div>
+            <div class="rem-desc">내가 받은 요청 중 2일 이상 응답하지 않은 건이 있으면 알려드려요.</div>
+            <div class="rem-actions">
+              <button class="rem-primary">활성화</button>
+              <button>괜찮아요</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRIEFING TAB -->
+    <div class="sp-screen" id="tab-briefing">
+      <div class="sp-briefing">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px">2026년 3월 30일 월요일 · 오전 8:00 생성</div>
+
+        <!-- AI Summary Hero -->
+        <div class="brief-hero">
+          <div class="hero-label">✨ AI 브리핑 요약</div>
+          <div class="hero-title">오늘 가장 시급한 일은 Q1 보고서 제출입니다</div>
+          <div class="hero-body">
+            14:00 마감인 <strong>Q1 보고서 최종 제출</strong>을 오전 중에 처리하시면,<br>오후에는 <strong>디자인 리뷰</strong>와 <strong>발표</strong>에 집중하실 수 있어요.
+          </div>
+          <div class="hero-stats">
+            <div class="stat"><div class="stat-num">4</div><div class="stat-label">업무</div></div>
+            <div class="stat"><div class="stat-num">4</div><div class="stat-label">일정</div></div>
+            <div class="stat"><div class="stat-num">2</div><div class="stat-label">긴급</div></div>
+          </div>
+          <div class="brief-hero-actions">
+            <div class="brief-hero-action" onclick="briefingAction('Q1 보고서 발표자료 준비해줘')">📄 Q1 보고서 발표자료 준비해줘 <span>›</span></div>
+            <div class="brief-hero-action" onclick="briefingAction('디자인 리뷰 안건 정리해줘')">📋 디자인 리뷰 안건 정리해줘 <span>›</span></div>
+            <div class="brief-hero-action" onclick="briefingAction('오늘 일정이랑 업무를 시간대별로 계획 세워줘')">📅 시간대별 계획 세워줘 <span>›</span></div>
+          </div>
+        </div>
+
+        <!-- Tasks -->
+        <div class="brief-card">
+          <div class="brief-label"><span class="dot" style="background:var(--red)"></span> 오늘 업무 우선순위 <span class="count">4건</span></div>
+          <div class="b-task"><div class="pri h"></div><div class="info"><div class="name">Q1 보고서 최종 제출</div><div class="meta">마감: 오늘 14:00 · 마케팅팀</div></div><div class="badge urgent">긴급</div></div>
+          <div class="b-task"><div class="pri h"></div><div class="info"><div class="name">디자인 시스템 컴포넌트 리뷰</div><div class="meta">마감: 오늘 18:00 · 개발팀 요청</div></div><div class="badge urgent">긴급</div></div>
+          <div class="b-task"><div class="pri m"></div><div class="info"><div class="name">신규 온보딩 플로우 와이어프레임</div><div class="meta">마감: 내일 · 프로덕트팀</div></div><div class="badge soon">임박</div></div>
+          <div class="b-task"><div class="pri l"></div><div class="info"><div class="name">주간 디자인 회의 안건 정리</div><div class="meta">마감: 금요일 · 디자인팀</div></div><div class="badge ok">여유</div></div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="brief-card">
+          <div class="brief-label"><span class="dot" style="background:var(--blue)"></span> 오늘 일정 <span class="count">4건</span></div>
+          <div class="b-schedule"><div class="time">09:30</div><div class="bar" style="background:var(--blue)"></div><div class="s-info"><div class="s-title">팀 스탠드업</div><div class="s-meta">디자인팀 · 30분 · 회의실 A</div></div></div>
+          <div class="b-schedule"><div class="time">11:00</div><div class="bar" style="background:var(--green)"></div><div class="s-info"><div class="s-title">디자인 리뷰 세션</div><div class="s-meta">개발팀 합동 · 1시간 · Zoom</div></div></div>
+          <div class="b-schedule"><div class="time">14:00</div><div class="bar" style="background:var(--amber)"></div><div class="s-info"><div class="s-title">Q1 보고서 발표</div><div class="s-meta">경영진 · 1시간 · 대회의실</div></div></div>
+          <div class="b-schedule"><div class="time">16:00</div><div class="bar" style="background:var(--blue)"></div><div class="s-info"><div class="s-title">프로덕트 싱크</div><div class="s-meta">PM팀 · 30분 · Slack 허들</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POST PREVIEW POPUPS -->
+<div class="popup-overlay" id="popupPost" onclick="if(event.target===this)closePopup()">
+  <div class="popup-box">
+    <div class="popup-top"><div class="proj-dot pink"></div>AI 비서 프로젝트<button class="popup-close" onclick="closePopup()">✕</button></div>
+    <div class="popup-scroll">
+      <div class="popup-author"><div class="popup-avatar">AI</div><div class="popup-author-info"><div class="a-name">AI 비서 <span style="font-weight:400;color:var(--text3)">자동 생성</span></div><div class="a-meta">2026-03-30 09:15 · AI 비서 프로젝트</div></div><div class="popup-author-actions"><a>게시글 바로가기</a></div></div>
+      <div class="popup-title">2026 AI 박람회 준비 계획서</div>
+      <div class="popup-subtitle">게시물 작성 · AI 자동 생성</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <strong>1. 행사 개요</strong><br>
+        행사명: 2026 AI World Expo<br>
+        일시: 2026년 5월 15일(금) ~ 17일(일), 3일간<br>
+        장소: 코엑스 Hall A<br>
+        참가 형태: 부스 운영 + 발표 세션<br>
+        부스 규격: 3m × 3m (스탠다드)<br><br>
+        <strong>2. 준비 일정</strong><br>
+        • 4/7 — 킥오프 미팅<br>
+        • 4/18 — 참가 등록 마감 (D-19)<br>
+        • 4/25 — 부스 디자인 시안 완성<br>
+        • 4/30 — 발표 자료 초안 완성<br>
+        • 5/2 — 홍보물/판촉물 디자인 완성<br>
+        • 5/9 — 데모 시나리오 완성<br>
+        • 5/12 — 리허설 및 최종 점검<br>
+        • 5/15~17 — 본행사<br><br>
+        <strong>3. 역할 분담</strong><br>
+        • 부스 디자인: TBD<br>
+        • 발표 자료: TBD<br>
+        • 홍보물 제작: TBD<br>
+        • 데모 준비: TBD<br>
+        • 현장 운영: TBD<br><br>
+        <strong>4. 예산 계획 (초안)</strong><br>
+        • 부스 설치비<br>
+        • 인쇄물/판촉물<br>
+        • 출장비 (교통/숙박)<br>
+        • 기타 비용
+      </div>
+    </div>
+    <div class="popup-footer"><span>😊 좋아요</span><span>🔖 북마크</span><span>🔔 다시 알림</span><span class="read-count">읽음 0</span></div>
+  </div>
+</div>
+
+<div class="popup-overlay" id="popupTask" onclick="if(event.target===this)closePopup()">
+  <div class="popup-box">
+    <div class="popup-top"><div class="proj-dot pink"></div>AI 비서 프로젝트<button class="popup-close" onclick="closePopup()">✕</button></div>
+    <div class="popup-scroll">
+      <div class="popup-author"><div class="popup-avatar">AI</div><div class="popup-author-info"><div class="a-name">AI 비서 <span style="font-weight:400;color:var(--text3)">자동 생성</span></div><div class="a-meta">2026-03-30 09:15</div></div><div class="popup-author-actions"><a>게시글 바로가기</a></div></div>
+      <div class="popup-title">2026 AI 박람회 준비</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">업무번호 540770</div>
+      <div class="popup-field"><span class="f-label">상태</span><span class="status-badge green">● 진행</span></div>
+      <div class="popup-field"><span class="f-label">담당자</span><span class="f-value"><span class="assignee-chip"><span class="chip-avatar">김</span>김서연 ✕</span></span></div>
+      <div class="popup-field"><span class="f-label">그룹</span><span class="group-chip">마케팅/행사 ✕</span></div>
+      <div class="popup-subtasks">
+        <div class="popup-subtasks-title">☰ 하위업무 7</div>
+        <div class="subtask-item"><span class="st-status todo">대기</span><span class="st-name">박람회 참가 등록</span><span class="st-date" style="color:var(--red)">2026-04-18 (금)</span><span class="st-avatar">김</span></div>
+        <div class="subtask-item"><span class="st-status todo">대기</span><span class="st-name">부스 디자인 시안 제작</span><span class="st-date">2026-04-25 (금)</span><span class="st-avatar">-</span></div>
+        <div class="subtask-item"><span class="st-status todo">대기</span><span class="st-name">발표 자료 초안 작성</span><span class="st-date">2026-04-30 (수)</span><span class="st-avatar">-</span></div>
+        <div class="subtask-item"><span class="st-status todo">대기</span><span class="st-name">홍보물/판촉물 디자인</span><span class="st-date">2026-05-02 (금)</span><span class="st-avatar">-</span></div>
+        <div class="subtask-item"><span class="st-status todo">대기</span><span class="st-name">데모 시나리오 준비</span><span class="st-date">2026-05-09 (금)</span><span class="st-avatar">-</span></div>
+        <div class="subtask-item"><span class="st-status todo">대기</span><span class="st-name">리허설 및 최종 점검</span><span class="st-date">2026-05-12 (월)</span><span class="st-avatar">-</span></div>
+        <div class="subtask-item"><span class="st-status todo">대기</span><span class="st-name">현장 세팅 및 운영</span><span class="st-date">2026-05-15~17</span><span class="st-avatar">-</span></div>
+      </div>
+    </div>
+    <div class="popup-footer"><span>😊 좋아요</span><span>🔖 북마크</span><span class="read-count">읽음 0</span></div>
+  </div>
+</div>
+
+<div class="popup-overlay" id="popupSchedule" onclick="if(event.target===this)closePopup()">
+  <div class="popup-box">
+    <div class="popup-top"><div class="proj-dot green"></div>AI 비서 프로젝트<button class="popup-close" onclick="closePopup()">✕</button></div>
+    <div class="popup-scroll">
+      <div class="popup-author"><div class="popup-avatar">AI</div><div class="popup-author-info"><div class="a-name">AI 비서 <span style="font-weight:400;color:var(--text3)">자동 생성</span></div><div class="a-meta">2026-03-30 09:15</div></div><div class="popup-author-actions"><a>게시글 바로가기</a></div></div>
+      <div class="popup-cal">
+        <div class="popup-cal-box"><div class="cal-month">2026-04</div><div class="cal-day">07</div></div>
+        <div class="popup-cal-info"><div class="cal-title">박람회 준비 킥오프 미팅</div><div class="cal-time">2026-04-07 (월), 10:00 — 11:00</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-bottom:12px">👥 <span>참석자 변경</span></div>
+      <div class="popup-attendees">
+        <div class="att-circle">김<div class="online"></div></div>
+        <div class="att-circle">박</div>
+        <div class="att-circle">이</div>
+        <div class="att-circle">정</div>
+        <div class="att-circle">최</div>
+        <div class="att-circle" style="background:var(--surface2);font-size:10px">···</div>
+      </div>
+      <div class="att-stats"><span class="yes">참석 5</span><span class="no">불참 0</span><span class="maybe">미정 0</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 0;border-top:1px solid var(--border);margin-top:12px;font-size:12px;color:var(--text2)">🔔 10분 전 미리 알림</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:12px;color:var(--text2)">🎙 <span style="padding:4px 12px;border:1px solid var(--border);border-radius:6px;font-size:11px">미팅노트로 녹음하기</span></div>
+    </div>
+    <div class="popup-footer"><span>😊 좋아요</span><span>🔖 북마크</span><span>🔔 다시 알림</span><span class="read-count">읽음 0</span></div>
+  </div>
+</div>
+
+<div class="popup-overlay" id="popupApiFeedback" onclick="if(event.target===this)closePopup()">
+  <div class="popup-box">
+    <div class="popup-top"><div class="proj-dot pink"></div>AI 비서 프로젝트<button class="popup-close" onclick="closePopup()">✕</button></div>
+    <div class="popup-scroll">
+      <div class="popup-author"><div class="popup-avatar">AI</div><div class="popup-author-info"><div class="a-name">AI 비서 <span style="font-weight:400;color:var(--text3)">자동 생성</span></div><div class="a-meta">2026-03-30 10:30 · AI 비서 프로젝트</div></div><div class="popup-author-actions"><a>게시글 바로가기</a></div></div>
+      <div class="popup-title">Re: 신규 API 스펙 초안 v2 피드백</div>
+      <div class="popup-subtitle">게시물 작성 · AI 자동 생성</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <strong>To: 박민수 과장 (개발팀)</strong><br>
+        <strong>참조: API 스펙 초안 v2</strong><br><br>
+        박민수 과장님, 요청하신 기획·비즈니스 관점 피드백 드립니다.<br><br>
+        <strong>1. 인증 방식</strong><br>
+        OAuth 2.0 적용 찬성합니다. 단, 만료 시간 설정 기준을 명시해 주시면 좋겠습니다. (예: 액세스 토큰 1시간, 리프레시 토큰 30일)<br><br>
+        <strong>2. 에러 코드 체계</strong><br>
+        비즈니스 에러(4xx)와 시스템 에러(5xx)를 분리 제안합니다. 클라이언트 측에서 에러 처리 분기가 명확해집니다.<br><br>
+        <strong>3. 페이지네이션</strong><br>
+        cursor 기반 적절합니다. 기본 limit 값을 현재 20에서 50으로 변경 제안합니다. 실사용 패턴상 50이 더 효율적입니다.<br><br>
+        <strong>4. 버전 관리</strong><br>
+        URL 경로 방식에 동의합니다. 하위 호환성 보장 기간(예: 6개월)을 명시해 주시면 기획 일정 수립에 도움이 됩니다.<br><br>
+        <strong>5. Rate Limit</strong><br>
+        분당 100회 적정합니다. 모니터링 대시보드 제공 여부를 확인해 주세요. 비즈니스팀에서 사용량 추이를 확인할 수 있으면 좋겠습니다.<br><br>
+        <em>※ 전체적으로 잘 설계되었습니다. 위 5개 항목만 반영되면 기획 승인 진행하겠습니다.</em>
+      </div>
+    </div>
+    <div class="popup-footer"><span>😊 좋아요</span><span>🔖 북마크</span><span class="read-count">읽음 0</span></div>
+  </div>
+</div>
+
+</div><!-- end app -->
+
+<script>
+let panelOpen = false;
+
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('sidePanel').classList.toggle('open', panelOpen);
+  if (panelOpen) {
+    document.getElementById('feedRight').style.display = 'none';
+  } else {
+    document.getElementById('feedRight').style.display = '';
+  }
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.sp-tab').forEach(t => {
+    const isTarget = t.dataset.tab === id;
+    t.classList.toggle('active', isTarget);
+  });
+  document.querySelectorAll('.sp-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'chat') resetChat();
+}
+
+function resetChat() {
+  const msgs = document.getElementById('spMsgs');
+  msgs.innerHTML = `<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">{사용자} 님, 필요한 일이 있으면 편하게 말씀해주세요.</div></div>`;
+  document.getElementById('quickSection').style.display = '';
+  document.getElementById('spInput').value = '';
+  resetExpo();
+}
+
+function sendPanelMsg() {
+  var input = document.getElementById('spInput');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  var msgs = document.getElementById('spMsgs');
+  document.getElementById('quickSection').style.display = 'none';
+
+  msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">' + escHtml(text) + '</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Expo scenario has its own flow
+  if (text.includes('박람회')) {
+    setTimeout(function() { startExpoFlow(); }, 400);
+    return;
+  }
+
+  // API feedback scenario has its own flow
+  if (text.includes('API') && (text.includes('피드백') || text.includes('초안'))) {
+    setTimeout(function() { startApiFeedbackFlow(); }, 400);
+    return;
+  }
+
+  // All other responses: tool-step animation → then final answer
+  var scenario = getScenario(text);
+  if (scenario === null) return; // handled by its own flow engine
+  setTimeout(function() { processWithToolSteps(scenario); }, 600);
+}
+
+function escHtml(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+function getScenario(text) {
+  // === BRIEFING & RELATED ===
+  if (text.includes('브리핑')) return {
+    label: '업무 브리핑을 생성합니다',
+    steps: [
+      {icon:'📅',label:'캘린더 일정 조회',done:'4건 확인',detail:'오늘 일정 4건: 스탠드업, 디자인 리뷰, Q1 발표, 프로덕트 싱크'},
+      {icon:'📋',label:'업무 목록 조회',done:'4건 확인',detail:'마감 업무 1건(Q1 보고서), 진행중 2건, 예정 1건'},
+      {icon:'💬',label:'관련 댓글·활동 확인',done:'2건 발견',detail:'Q1 보고서: ROI 수치 업데이트 요청 코멘트 / 디자인 리뷰: 파일 업로드 완료'},
+      {icon:'🧠',label:'우선순위 분석 + 리포트 생성',done:'생성 완료',detail:'긴급 2건, 임박 1건, 여유 1건 분류 완료'}
+    ],
+    answer: '<div class="sensitive">🛡 입력 정보에 민감 항목 없음</div>안녕하세요, 김서연님. 2026.3.30(월) 오전 9시 브리핑입니다.<br>오늘 가장 먼저 챙기면 좋은 업무와 일정만 추려서 정리했어요.<hr><h3>📋 오늘 먼저 처리하세요</h3><ul><li><strong>1. Q1 보고서 최종 제출 - 마감 오늘</strong><ul><li>상태: 오늘이 <strong>D-Day</strong></li><li>코멘트: "3페이지 <strong>ROI 수치 업데이트 필요</strong>"</li></ul></li><li><strong>2. 디자인 리뷰 세션 자료 검토 - 11:00 전까지</strong><ul><li>일정: 오늘 11:00-12:00, 개발팀 합동</li></ul></li><li><strong>3. 온보딩 플로우 와이어프레임 - 내일 마감</strong><ul><li>프로덕트팀 요청 · 2일째 대기</li></ul></li></ul><hr><h3>✅ 오늘 포인트 정리</h3>오늘 가장 시급한 일은 <strong>Q1 보고서 코멘트 반영 후 제출</strong>입니다.<br><strong>오전 중에 처리해두면</strong>, 오후에는 <strong>발표</strong>에 집중하실 수 있어요.<div class="followup" style="margin-top:10px">⇒ 이 브리핑을 바탕으로 뭐부터 더 도와줄까?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'Q1 보고서 위해 해야 할 일만 따로 정리해줘\')">Q1 보고서 할 일 정리해줘<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'오늘 일정이랑 업무를 시간대별로 계획 세워줘\')">시간대별 계획 세워줘<span style="color:var(--text3)">›</span></div></div><div class="report-bar"><span>이 브리핑으로 리포트를 작성했어요!</span><button class="report-btn" onclick="switchTab(\'briefing\')">리포트 확인</button></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === Q1 REPORT RELATED ===
+  if (text.includes('Q1') && (text.includes('정리') || text.includes('할 일') || text.includes('준비') || text.includes('발표'))) return {
+    label: 'Q1 보고서 관련 업무를 정리합니다',
+    steps: [
+      {icon:'📋',label:'Q1 보고서 업무 조회',done:'1건 확인',detail:'Q1 보고서 최종 제출 · 마감 오늘 14:00'},
+      {icon:'💬',label:'관련 코멘트 확인',done:'1건 발견',detail:'박민수 팀장: "3페이지 ROI 수치 업데이트 필요"'},
+      {icon:'📂',label:'참고 자료 검색',done:'2건 발견',detail:'위키: Q1 ROI 산출 기준 / 메일: Q1 보고서 리뷰 요청'},
+      {icon:'📝',label:'액션 리스트 생성',done:'완료',detail:'3단계 실행 계획 작성'}
+    ],
+    answer: '<h3>📋 Q1 보고서 제출을 위한 액션 리스트</h3><ul><li><strong>Step 1. ROI 수치 업데이트</strong> (예상 30분)<ul><li>위키 「Q1 ROI 산출 기준」 참고</li><li>3페이지 ROI 표 데이터 갱신</li></ul></li><li><strong>Step 2. 최종 검토</strong> (예상 15분)<ul><li>박민수 팀장 코멘트 반영 확인</li><li>오탈자 및 수치 정합성 점검</li></ul></li><li><strong>Step 3. 제출</strong> (예상 5분)<ul><li>마케팅팀 프로젝트에 최종본 업로드</li><li>박민수 팀장에게 멘션 알림</li></ul></li></ul><hr><h3>✅ 이대로 진행하면 12:00 전에 완료 가능합니다</h3>14:00 발표 전에 충분히 여유가 있어요.<div class="followup" style="margin-top:10px">⇒ 바로 도와줄까요?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'ROI 산출 기준 문서 내용 요약해줘\')">ROI 산출 기준 문서 요약해줘<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'보고서 제출 완료 후 팀장에게 알림 보내줘\')">제출 후 팀장에게 알림 보내줘<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('ROI') && text.includes('요약')) return {
+    label: 'ROI 산출 기준 문서를 조회합니다',
+    steps: [
+      {icon:'📖',label:'위키 문서 검색',done:'1건 확인',detail:'「Q1 ROI 산출 기준」 문서 발견'},
+      {icon:'📝',label:'핵심 내용 요약',done:'완료',detail:'산출 공식, 기준 지표, 적용 범위 추출'}
+    ],
+    answer: '<h3>📖 「Q1 ROI 산출 기준」 요약</h3><ul><li><strong>산출 공식:</strong> (순이익 / 투자비용) × 100</li><li><strong>기준 지표:</strong> 월별 매출, 마케팅 비용, 인건비</li><li><strong>적용 범위:</strong> 1~3월 캠페인 성과</li><li><strong>목표 ROI:</strong> 150% 이상</li></ul><hr>이 기준으로 3페이지 ROI 표를 업데이트하시면 됩니다.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === DESIGN REVIEW RELATED ===
+  if (text.includes('디자인 리뷰') || text.includes('체크리스트')) return {
+    label: '디자인 리뷰 안건을 정리합니다',
+    steps: [
+      {icon:'📋',label:'디자인 리뷰 관련 업무 조회',done:'3건 확인',detail:'컴포넌트 리뷰, 스타일 가이드, 접근성 점검'},
+      {icon:'💬',label:'개발팀 피드백 확인',done:'2건 발견',detail:'Button 컴포넌트 수정 요청 / 컬러 토큰 변경 제안'},
+      {icon:'📂',label:'관련 파일 검색',done:'1건 발견',detail:'Button_v3_final.fig (김원석 업로드)'},
+      {icon:'📝',label:'안건 문서 생성',done:'완료',detail:'3개 안건 + 체크리스트 작성'}
+    ],
+    answer: '<h3>📋 디자인 리뷰 안건 (11:00)</h3><ul><li><strong>안건 1. Button 컴포넌트 수정</strong><ul><li>개발팀 피드백: hover 상태 컬러 변경 요청</li><li>참고: Button_v3_final.fig</li><li>☐ 디자인 의도 설명 준비</li></ul></li><li><strong>안건 2. 컬러 토큰 체계 변경</strong><ul><li>다크모드 대응 토큰 추가 제안</li><li>☐ 변경 범위 영향도 정리</li></ul></li><li><strong>안건 3. 접근성 점검 결과</strong><ul><li>WCAG AA 기준 미달 항목 3건</li><li>☐ 우선순위별 수정 계획 공유</li></ul></li></ul><hr>11:00 전까지 파일을 한번 확인해 두시면 좋겠어요.<div class="followup" style="margin-top:10px">⇒ 더 준비할까요?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'Button 컴포넌트 변경 이력 정리해줘\')">Button 변경 이력 정리해줘<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === SCHEDULE & PLANNING ===
+  if (text.includes('스케줄') || text.includes('시간대별') || text.includes('계획 세워')) return {
+    label: '시간대별 계획을 세웁니다',
+    steps: [
+      {icon:'📅',label:'오늘 일정 조회',done:'4건 확인',detail:'09:30, 11:00, 14:00, 16:00 미팅'},
+      {icon:'📋',label:'업무 소요시간 추정',done:'완료',detail:'ROI 업데이트 30분, 리뷰 준비 20분, API 피드백 15분'},
+      {icon:'🧠',label:'최적 시간 배치',done:'완료',detail:'빈 시간 슬롯에 업무 배치'}
+    ],
+    answer: '<h3>📅 오늘 시간대별 계획</h3><ul><li><strong>08:30~09:20</strong> — Q1 보고서 ROI 수치 업데이트 (50분)</li><li><strong>09:30~10:00</strong> — 팀 스탠드업</li><li><strong>10:00~10:20</strong> — 디자인 리뷰 자료 사전 검토</li><li><strong>10:20~10:40</strong> — API 스펙 피드백 회신</li><li><strong>10:40~11:00</strong> — 여유 시간 (버퍼)</li><li><strong>11:00~12:00</strong> — 디자인 리뷰 세션</li><li><strong>12:00~13:00</strong> — 점심</li><li><strong>13:00~13:50</strong> — Q1 보고서 최종 검토 + 제출</li><li><strong>14:00~15:00</strong> — Q1 보고서 발표</li><li><strong>15:00~16:00</strong> — 온보딩 와이어프레임 검토</li><li><strong>16:00~16:30</strong> — 프로덕트 싱크</li><li><strong>16:30~18:00</strong> — 자유 업무 시간</li></ul><hr><h3>✅ 포인트</h3>오전에 긴급 업무 3건을 모두 처리하고, 오후에는 발표와 미팅에 집중하는 구성입니다.<div class="followup" style="margin-top:10px">⇒ 이 계획대로 진행할까요?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'이 계획을 캘린더에 블록으로 잡아줘\')">캘린더에 블록 잡아줘<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('집중 작업') || text.includes('블록') && text.includes('잡아')) return {
+    label: '캘린더에 일정을 등록합니다',
+    steps: [
+      {icon:'📅',label:'캘린더 빈 시간 확인',done:'확인 완료',detail:'해당 시간대 충돌 없음'},
+      {icon:'📝',label:'일정 등록',done:'등록 완료',detail:'캘린더에 블록 일정 생성'}
+    ],
+    answer: '<h3>📅 일정 등록 완료</h3>캘린더에 집중 작업 블록을 등록했습니다.<ul><li>일시: <strong>목요일 13:00~18:00</strong></li><li>제목: 집중 작업 블록 (방해 금지)</li><li>알림: 10분 전</li></ul><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === CHANGE TRACKING ===
+  if (text.includes('변경') || text.includes('퇴근')) return {
+    label: '어제 퇴근 이후 변경사항을 확인합니다',
+    steps: [
+      {icon:'📋',label:'업무 상태 변경 확인',done:'2건 변경',detail:'Q1 보고서: 코멘트 추가 / 디자인 시스템: 상태 변경(수정 요청)'},
+      {icon:'💬',label:'새 코멘트·멘션 확인',done:'1건 발견',detail:'박민수 팀장: "3페이지 ROI 수치 업데이트 필요" (20:00)'},
+      {icon:'📂',label:'파일 업로드 확인',done:'1건 확인',detail:'Button_v3_final.fig 업로드 (김원석, 21:30)'},
+      {icon:'🆕',label:'새 업무 배정 확인',done:'1건 발견',detail:'「온보딩 플로우 와이어프레임 검토」 — 프로덕트팀 이수진 매니저 (어제 19:15)'}
+    ],
+    answer: '<h3>📌 변경사항 요약</h3><ul><li><strong>Q1 보고서 최종 제출</strong><ul><li>코멘트 추가: 박민수 팀장 — "ROI 수치 업데이트 필요" (20:00)</li></ul></li><li><strong>디자인 시스템 컴포넌트</strong><ul><li>상태 변경: 검토중 → 수정 요청 (김원석, 21:30)</li><li>파일 첨부: Button_v3_final.fig</li></ul></li><li><strong>새 업무 배정</strong><ul><li>「온보딩 플로우 와이어프레임 검토」 — 프로덕트팀 이수진</li></ul></li></ul><hr><h3>✅ 핵심 포인트</h3>가장 먼저 확인할 것은 <strong>Q1 보고서 코멘트</strong>입니다. 오늘 마감이라 오전 중 반영이 필요해요.<div class="followup" style="margin-top:10px">⇒ 더 도와줄까요?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'Q1 보고서 코멘트 내용 상세히 보여줘\')">Q1 보고서 코멘트 상세 보기<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'변경된 업무들 처리 순서 정리해줘\')">처리 순서 정리해줘<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('코멘트') && text.includes('상세')) return {
+    label: 'Q1 보고서 코멘트를 조회합니다',
+    steps: [
+      {icon:'💬',label:'코멘트 상세 조회',done:'1건 확인',detail:'박민수 팀장 코멘트 전문 조회'}
+    ],
+    answer: '<h3>💬 Q1 보고서 코멘트 상세</h3><div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;font-size:12px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><strong>박민수 팀장</strong><span style="color:var(--text3);font-size:10px">2026-03-29 20:00</span></div><div style="color:var(--text2);line-height:1.7">"3페이지 ROI 수치가 Q4 기준으로 되어 있는데, <strong>Q1 최종 수치로 업데이트</strong> 부탁드립니다.<br>참고로 위키 「Q1 ROI 산출 기준」 문서에 최신 수치가 있으니 확인해주세요.<br>그 외에는 잘 정리되어 있습니다. 수고하셨어요!"</div></div><div class="followup" style="margin-top:10px">⇒ 바로 처리할까요?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'ROI 산출 기준 문서 내용 요약해줘\')">ROI 산출 기준 문서 요약해줘<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'Q1 보고서 위해 해야 할 일만 따로 정리해줘\')">Q1 보고서 할 일 정리해줘<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('처리 순서') || text.includes('순서 정리')) return {
+    label: '업무 처리 순서를 정리합니다',
+    steps: [
+      {icon:'📋',label:'변경 업무 조회',done:'3건 확인',detail:'코멘트 반영, 파일 확인, 새 업무 응답'},
+      {icon:'🧠',label:'긴급도·의존성 분석',done:'완료',detail:'마감일, 요청자 직급, 후속 영향 분석'}
+    ],
+    answer: '<h3>📋 추천 처리 순서</h3><ul><li><strong>1순위: Q1 보고서 ROI 업데이트</strong><ul><li>⚠️ 오늘 14:00 마감 · 팀장 직접 요청</li><li>예상 소요: 30분</li></ul></li><li><strong>2순위: 디자인 시스템 수정 요청 확인</strong><ul><li>개발팀 대기 중 · Button_v3_final.fig 확인</li><li>예상 소요: 20분</li></ul></li><li><strong>3순위: 온보딩 플로우 검토 응답</strong><ul><li>내일 마감 · 이수진 매니저 요청</li><li>예상 소요: 1시간</li></ul></li></ul><hr>1~2순위를 오전에 끝내면 오후에 여유가 생겨요.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === AVAILABLE TASKS ===
+  if (text.includes('할 수 있는') || text.includes('업무 알려') || text.includes('처리해야할')) return {
+    label: '지금 처리 가능한 업무를 찾습니다',
+    steps: [
+      {icon:'📋',label:'전체 업무 상태 조회',done:'15건 확인',detail:'진행중 5건, 대기 3건, 미배정 2건, 기타 5건'},
+      {icon:'📅',label:'오늘 일정과 대조',done:'3건 필터',detail:'일정 사이 빈 시간에 처리 가능한 업무 필터링'},
+      {icon:'⏱',label:'소요 시간 추정',done:'완료',detail:'Q1 ROI 업데이트(30분), 리뷰 자료 검토(20분), API 피드백(15분)'}
+    ],
+    answer: '<h3>⚡ 지금 처리 가능한 업무 3건</h3><ul><li><strong>1. Q1 보고서 ROI 수치 업데이트</strong> — 예상 30분 · ⚠️ 오늘 14:00 마감</li><li><strong>2. 디자인 리뷰 자료 사전 검토</strong> — 예상 20분 · 11:00 전까지</li><li><strong>3. API 스펙 피드백 회신</strong> — 예상 15분 · 2일째 대기</li></ul><hr><h3>✅ 추천 순서</h3><strong>Q1 보고서 → 디자인 리뷰 자료 → API 피드백</strong> 순으로 처리하시면 오전 안에 긴급 업무를 모두 마무리할 수 있어요.<div class="followup" style="margin-top:10px">⇒ 바로 진행할까요?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'Q1 보고서 ROI 업데이트 관련 자료 정리해줘\')">Q1 ROI 자료 정리해줘<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'API 스펙 피드백 회신 초안 작성해줘\')">API 피드백 초안 작성해줘<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === API FEEDBACK ===
+  // API feedback is handled by startApiFeedbackFlow in sendPanelMsg
+
+  // === REMINDER ===
+  if (text.includes('리마인더') && text.includes('설정')) return {
+    label: '새 리마인더를 설정합니다',
+    steps: [
+      {icon:'🧠',label:'요청 분석',done:'완료',detail:'리마인더 설정 요청으로 판단'}
+    ],
+    answer: '<h3>🔔 새 리마인더 설정</h3>어떤 리마인더를 만들까요?<div class="followup-list" style="margin-top:8px"><div class="followup-item" onclick="followupAction(\'매일 아침 9시에 업무 브리핑 해줘\')">매일 아침 9시 업무 브리핑<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'매주 금요일에 주간 업무 요약해줘\')">매주 금요일 주간 업무 요약<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'마감 하루 전에 미리 알려줘\')">마감 D-1 자동 알림<span style="color:var(--text3)">›</span></div></div><br>또는 원하는 내용을 직접 입력하셔도 됩니다.<br>예) "매일 오후 6시에 미완료 업무 정리해줘"<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('매일') && (text.includes('브리핑') || text.includes('아침'))) return {
+    label: '반복 리마인더를 등록합니다',
+    steps: [
+      {icon:'🔔',label:'리마인더 생성',done:'완료',detail:'매일 09:00 반복 리마인더 생성'},
+      {icon:'🧠',label:'AI 실행 규칙 설정',done:'완료',detail:'트리거 시 "업무 브리핑" 자동 실행'}
+    ],
+    answer: '<h3>✅ 리마인더 등록 완료</h3><div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;font-size:12px"><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>반복</span><strong>매일</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>시간</span><strong>09:00</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>실행</span><strong>업무 브리핑 자동 실행</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span>알림</span><strong>결과를 토스트로 알림</strong></div></div>🔔 탭에서 관리할 수 있어요.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('매주') && text.includes('금요일')) return {
+    label: '반복 리마인더를 등록합니다',
+    steps: [
+      {icon:'🔔',label:'리마인더 생성',done:'완료',detail:'매주 금요일 09:00 반복 리마인더 생성'},
+      {icon:'🧠',label:'AI 실행 규칙 설정',done:'완료',detail:'트리거 시 "주간 업무 요약" 자동 실행'}
+    ],
+    answer: '<h3>✅ 리마인더 등록 완료</h3><div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;font-size:12px"><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>반복</span><strong>매주 금요일</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>시간</span><strong>09:00</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>실행</span><strong>주간 업무 요약 자동 실행</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span>알림</span><strong>결과를 토스트로 알림</strong></div></div>🔔 탭에서 관리할 수 있어요.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('마감') && (text.includes('알려') || text.includes('알림'))) return {
+    label: '마감 알림 리마인더를 설정합니다',
+    steps: [
+      {icon:'🔔',label:'리마인더 생성',done:'완료',detail:'마감 D-1 자동 감지 리마인더 생성'},
+      {icon:'🧠',label:'AI 감지 규칙 설정',done:'완료',detail:'마감일 하루 전 자동 트리거'}
+    ],
+    answer: '<h3>✅ 리마인더 등록 완료</h3><div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;font-size:12px"><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>유형</span><strong>AI 자동 감지</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>조건</span><strong>마감일 D-1</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>실행</span><strong>해당 업무 상태 + 남은 할일 정리</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span>알림</span><strong>토스트 알림 + 브리핑에 포함</strong></div></div>🔔 탭에서 관리할 수 있어요.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === MEETING ===
+  if (text.includes('미팅') && text.includes('잡아')) return {
+    label: '미팅 일정을 조율합니다',
+    steps: [
+      {icon:'👥',label:'참여자 캘린더 조회',done:'확인 완료',detail:'팀원 일정 충돌 여부 확인'},
+      {icon:'📅',label:'가능한 시간대 탐색',done:'2건 발견',detail:'4/2 수 10:00, 4/3 목 14:00'},
+      {icon:'📝',label:'일정 등록 준비',done:'완료',detail:'미팅 일정 + 안건 초안 생성'}
+    ],
+    answer: '<h3>📅 킥오프 미팅 일정 제안</h3><ul><li><strong>옵션 A:</strong> 4/2 (수) 10:00~11:00 — 전원 가능</li><li><strong>옵션 B:</strong> 4/3 (목) 14:00~15:00 — 1명 불확실</li></ul><div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin:8px 0;font-size:11px"><strong>안건 초안</strong><br>1. 박람회 개요 및 목표 공유<br>2. 역할 분담 논의<br>3. 주요 마일스톤 확인<br>4. 예산 협의</div>어느 옵션으로 등록할까요?<div class="followup-list" style="margin-top:8px"><div class="followup-item" onclick="followupAction(\'옵션 A로 등록하고 팀원들에게 알림 보내줘\')">옵션 A로 등록 + 알림<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'옵션 B로 등록하고 팀원들에게 알림 보내줘\')">옵션 B로 등록 + 알림<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('옵션') && text.includes('등록')) return {
+    label: '미팅 일정을 등록합니다',
+    steps: [
+      {icon:'📅',label:'캘린더 일정 등록',done:'완료',detail:'일정 생성 + 참석자 지정'},
+      {icon:'🔔',label:'참석자 알림 발송',done:'완료',detail:'팀원 5명에게 알림 발송'}
+    ],
+    answer: '<h3>✅ 미팅 등록 완료</h3><ul><li>일시: <strong>4/2 (수) 10:00~11:00</strong></li><li>장소: 회의실 A (또는 Zoom)</li><li>참석자: 5명 알림 발송 완료</li><li>안건: 자동 첨부됨</li></ul><div class="preview-link" onclick="openPopup(\'popupSchedule\')">📎 등록된 일정 보기 →</div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === EXPO SUB-TASKS ===
+  if (text.includes('참가 신청서') || text.includes('참가 등록')) return {
+    label: '참가 신청서를 작성합니다',
+    steps: [
+      {icon:'🌐',label:'박람회 신청 양식 확인',done:'확인 완료',detail:'2026 AI World Expo 공식 신청서 양식 조회'},
+      {icon:'📂',label:'회사 정보 조회',done:'완료',detail:'회사명, 대표자, 사업자번호, 담당자 정보 수집'},
+      {icon:'📝',label:'신청서 초안 작성',done:'완료',detail:'필수 항목 모두 반영. 발표 주제란 직접 입력 필요'}
+    ],
+    answer: '<h3>📄 참가 신청서 초안 완료</h3><div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;font-size:12px"><div style="margin-bottom:6px"><strong>2026 AI World Expo 참가 신청서</strong></div><div style="color:var(--text2);line-height:1.7">• 회사명: (주)플로우<br>• 참가 유형: 부스 운영 + 발표<br>• 부스 규격: 3m × 3m (스탠다드)<br>• 참가 인원: 5명<br>• 발표 주제: <strong style="color:var(--red)">⚠️ 직접 입력 필요</strong><br>• 담당자: 김서연</div></div><div class="preview-link" onclick="openPopup(\'popupPost\')">📎 신청서 게시글 보기 →</div><hr>발표 주제를 알려주시면 바로 반영합니다.<div class="followup-list" style="margin-top:8px"><div class="followup-item" onclick="followupAction(\'발표 주제는 AI 기반 업무 자동화 사례로 해줘\')">발표 주제 입력하기<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('참가자 명단') || text.includes('출장')) return {
+    label: '참가자 명단을 정리하고 출장을 신청합니다',
+    steps: [
+      {icon:'👥',label:'프로젝트 멤버 조회',done:'18명 확인',detail:'프로젝트 멤버 전체 조회'},
+      {icon:'📅',label:'5월 일정 충돌 확인',done:'2건 충돌',detail:'박민수 — 5/15 다른 출장 / 이서연 — 5/15 연차'},
+      {icon:'🧠',label:'참가자 추천',done:'5명 추천',detail:'역할, 경험, 일정 종합 분석'},
+      {icon:'📝',label:'출장 신청서 작성',done:'완료',detail:'5명 출장 신청서 초안 생성'}
+    ],
+    answer: '<h3>👥 참가자 명단 (5명)</h3><ul><li><strong>김서연</strong> (나) — 발표 + 총괄</li><li><strong>정하은</strong> — 부스 디자인 담당</li><li><strong>이준호</strong> — 데모 시연 담당</li><li><strong>최윤서</strong> — 마케팅/홍보</li><li><strong>장현우</strong> — 기술 지원</li></ul><div style="font-size:11px;color:var(--text3);margin:4px 0">* 박민수(다른 출장), 이서연(연차)은 일정 충돌로 제외</div><hr><h3>📝 출장 신청서</h3>5명에 대한 출장 신청서 초안을 작성했습니다.<div class="preview-link" onclick="openPopup(\'popupPost\')">📎 출장 신청서 보기 →</div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('경쟁사') || text.includes('부스 사례')) return {
+    label: '경쟁사 부스 사례를 조사합니다',
+    steps: [
+      {icon:'🌐',label:'웹 검색: AI 박람회 부스',done:'12건 수집',detail:'"AI expo booth design 2025 2024" 검색'},
+      {icon:'📂',label:'사내 과거 자료 조회',done:'2건 발견',detail:'2025 AI 박람회 사진, 2024 CES 부스 보고서'},
+      {icon:'🧠',label:'트렌드 분석 + 정리',done:'완료',detail:'주요 트렌드 5개, 추천 사항 3개 도출'}
+    ],
+    answer: '<h3>🔍 경쟁사 부스 사례 조사 결과</h3><ul><li><strong>트렌드 1. 인터랙티브 데모 존</strong> — 방문객이 직접 제품을 체험하는 공간이 핵심. 터치스크린 키오스크 활용 증가.</li><li><strong>트렌드 2. LED 미디어월</strong> — 대형 디스플레이로 시선 집중. 3m 부스 기준 후면 전체 활용.</li><li><strong>트렌드 3. 미니멀 디자인</strong> — 화이트+포인트컬러 조합. 제품에 집중하는 깔끔한 구성.</li><li><strong>트렌드 4. QR 코드 리드 수집</strong> — 명함 대신 QR로 정보 수집. 후속 마케팅 연결.</li><li><strong>트렌드 5. 굿즈/판촉물</strong> — 브랜드 스티커, 에코백이 인기. 실용적인 아이템 선호.</li></ul><hr><h3>💡 추천</h3><ol><li>후면 LED 미디어월 + 전면 데모 키오스크 구성</li><li>QR 코드 기반 리드 수집 시스템 도입</li><li>브랜드 에코백 + 스티커 제작</li></ol><div class="preview-link" onclick="openPopup(\'popupPost\')">📎 조사 리포트 전문 보기 →</div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('발표 주제') && (text.includes('리서치') || text.includes('후보'))) return {
+    label: '발표 주제 후보를 리서치합니다',
+    steps: [
+      {icon:'🌐',label:'AI 컨퍼런스 발표 트렌드 검색',done:'완료',detail:'2025~2026 주요 AI 발표 주제 분석'},
+      {icon:'📂',label:'우리 회사 강점 분석',done:'완료',detail:'제품 특징, 성과 데이터 조회'},
+      {icon:'🧠',label:'주제 후보 도출',done:'5개 도출',detail:'트렌드 + 강점 매칭'}
+    ],
+    answer: '<h3>📊 발표 주제 후보 5선</h3><ol><li><strong>AI 기반 업무 자동화의 현재와 미래</strong> — 가장 범용적, 참관객 관심도 높음</li><li><strong>에이전트 AI로 바꾸는 팀 협업</strong> — 트렌드 부합, 데모 연계 용이</li><li><strong>비개발자를 위한 AI 도구 설계 철학</strong> — 차별화 포인트, 디자인팀 강점 부각</li><li><strong>AI 비서가 바꾸는 일하는 방식</strong> — 제품 직접 소개, 실사용 사례 중심</li><li><strong>SaaS에서의 AI 통합 전략</strong> — 기술 리더십 어필, B2B 고객 대상</li></ol><hr>가장 추천하는 건 <strong>2번 "에이전트 AI로 바꾸는 팀 협업"</strong>입니다. 트렌드에 부합하고 우리 제품 데모와 자연스럽게 연결돼요.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('발표 주제') && !text.includes('리서치') && !text.includes('후보')) return {
+    label: '발표 주제를 반영합니다',
+    steps: [
+      {icon:'📝',label:'신청서 발표 주제 반영',done:'완료',detail:'발표 주제란 업데이트'}
+    ],
+    answer: '<h3>✅ 발표 주제 반영 완료</h3>참가 신청서의 발표 주제를 <strong>"AI 기반 업무 자동화 사례"</strong>로 업데이트했습니다.<div class="preview-link" onclick="openPopup(\'popupPost\')">📎 업데이트된 신청서 보기 →</div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('데모') && text.includes('시나리오')) return {
+    label: '데모 시나리오를 작성합니다',
+    steps: [
+      {icon:'📂',label:'제품 주요 기능 조회',done:'완료',detail:'AI 비서, 브리핑, 업무 자동화 기능 확인'},
+      {icon:'🧠',label:'시연 흐름 설계',done:'완료',detail:'3분 데모 시나리오 구성'},
+      {icon:'📝',label:'시나리오 문서 작성',done:'완료',detail:'단계별 스크립트 생성'}
+    ],
+    answer: '<h3>🎬 데모 시나리오 (3분)</h3><ol><li><strong>0:00~0:30 인트로</strong> — "업무를 말로 하는 시대" 키 메시지</li><li><strong>0:30~1:30 AI 비서 데모</strong> — 실시간으로 "박람회 준비해줘" 입력 → 계획서 자동 생성</li><li><strong>1:30~2:30 업무 자동화</strong> — 생성된 업무/일정이 프로젝트에 자동 등록되는 과정</li><li><strong>2:30~3:00 마무리</strong> — "사람은 판단만, 나머지는 AI가" 클로징</li></ol><div class="preview-link" onclick="openPopup(\'popupPost\')">📎 시나리오 전문 보기 →</div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('홍보물') || text.includes('판촉물')) return {
+    label: '홍보물 디자인 업무를 준비합니다',
+    steps: [
+      {icon:'📂',label:'브랜드 가이드 조회',done:'확인',detail:'로고, 컬러, 폰트 가이드라인 확인'},
+      {icon:'📝',label:'제작 목록 정리',done:'완료',detail:'리플렛, 명함, 배너, 에코백, 스티커'}
+    ],
+    answer: '<h3>🎨 홍보물 제작 목록</h3><ul><li><strong>리플렛</strong> — 양면, 제품 소개 + QR코드 (500부)</li><li><strong>명함</strong> — 참가자 5명 (각 100장)</li><li><strong>배너</strong> — 부스 후면용 X배너 2개</li><li><strong>에코백</strong> — 브랜드 로고 인쇄 (200개)</li><li><strong>스티커</strong> — 브랜드 캐릭터 스티커 (500장)</li></ul><hr>디자이너 배정이 필요합니다. 정하은 디자이너에게 배정할까요?<div class="followup-list" style="margin-top:8px"><div class="followup-item" onclick="followupAction(\'정하은 디자이너에게 홍보물 디자인 배정해줘\')">정하은에게 배정<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('배정') && text.includes('정하은')) return {
+    label: '담당자를 배정합니다',
+    steps: [
+      {icon:'👤',label:'담당자 배정',done:'완료',detail:'정하은 디자이너에게 업무 배정'},
+      {icon:'🔔',label:'알림 발송',done:'완료',detail:'정하은에게 멘션 알림 발송'}
+    ],
+    answer: '<h3>✅ 담당자 배정 완료</h3>정하은 디자이너에게 홍보물 디자인 업무를 배정하고 알림을 보냈습니다.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // === GENERAL ===
+  if (text.includes('마감') && text.includes('정리')) return {
+    label: '마감 업무를 정리합니다',
+    steps: [
+      {icon:'📋',label:'마감 업무 조회',done:'3건 확인',detail:'이번주 마감 업무 필터링'},
+      {icon:'🧠',label:'마감일순 정렬',done:'완료',detail:'긴급도별 분류'}
+    ],
+    answer: '<h3>📋 이번주 마감 업무</h3><ul><li><strong>오늘</strong> — Q1 보고서 최종 제출 (14:00)</li><li><strong>내일</strong> — 온보딩 플로우 와이어프레임 검토</li><li><strong>금요일</strong> — 주간 디자인 회의 안건 정리</li></ul><hr>오늘 마감 1건이 가장 시급합니다.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('새로운 업무') || text.includes('진행해')) return {
+    label: '새 업무 등록을 준비합니다',
+    steps: [{icon:'🧠',label:'요청 의도 분석',done:'완료',detail:'새 업무 등록 요청으로 판단'}],
+    answer: '<h3>📝 업무 등록에 필요한 정보</h3><ul><li><strong>업무 제목</strong>은 무엇인가요?</li><li><strong>마감일</strong>이 있나요?</li><li><strong>관련 프로젝트</strong>가 있나요?</li></ul><br>또는 간단히 한 문장으로 설명해 주시면 제가 알아서 정리해 드릴게요.<br>예) "금요일까지 온보딩 플로우 와이어프레임 v2 작성"<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('게시글') && (text.includes('등록') || text.includes('멘션'))) return {
+    label: '게시글을 등록하고 멘션합니다',
+    steps: [
+      {icon:'📝',label:'게시글 작성',done:'완료',detail:'내용 정리 후 게시글 생성'},
+      {icon:'📁',label:'프로젝트에 등록',done:'완료',detail:'해당 프로젝트에 게시 완료'},
+      {icon:'🔔',label:'멘션 알림 발송',done:'완료',detail:'담당자에게 멘션 알림 발송'}
+    ],
+    answer: '<h3>✅ 게시글 등록 완료</h3>게시글을 등록하고 담당자에게 멘션 알림을 보냈습니다.<div class="preview-link" onclick="openPopup(\'popupPost\')">📎 등록된 게시글 보기 →</div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  if (text.includes('알림') && text.includes('보내')) return {
+    label: '알림을 발송합니다',
+    steps: [
+      {icon:'🔔',label:'알림 대상 확인',done:'완료',detail:'수신자 목록 확인'},
+      {icon:'📨',label:'알림 발송',done:'완료',detail:'알림 발송 완료'}
+    ],
+    answer: '<h3>✅ 알림 발송 완료</h3>해당 멤버에게 알림을 보냈습니다.<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+
+  // Default
+  return {
+    label: '"' + text + '"를 처리합니다',
+    steps: [
+      {icon:'🧠',label:'요청 의도 분석',done:'완료',detail:'작업 유형 판단 완료'},
+      {icon:'📂',label:'관련 데이터 검색',done:'탐색 완료',detail:'플로우, 위키, 캘린더, 메일에서 연관 정보 탐색'},
+      {icon:'📝',label:'결과 작성',done:'완료',detail:'요청 사항 처리 완료'}
+    ],
+    answer: '네, 요청을 처리했습니다.<div class="followup" style="margin-top:10px">⇒ 추가로 도와줄까요?</div><div class="followup-list"><div class="followup-item" onclick="followupAction(\'참여자도 함께 지정해줘\')">참여자도 함께 지정해줘<span style="color:var(--text3)">›</span></div><div class="followup-item" onclick="followupAction(\'관련 자료도 첨부해줘\')">관련 자료도 첨부해줘<span style="color:var(--text3)">›</span></div></div><div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>'
+  };
+}
+
+var toolStepCounter = 0;
+
+function processWithToolSteps(scenario) {
+  var msgs = document.getElementById('spMsgs');
+  toolStepCounter++;
+  var containerId = 'toolSteps_' + toolStepCounter;
+
+  // Build tool-steps HTML
+  var html = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+  html += '<div style="font-size:12px;font-weight:600;margin-bottom:6px">' + scenario.label + '</div>';
+  html += '<div class="tool-steps" id="' + containerId + '">';
+  for (var i = 0; i < scenario.steps.length; i++) {
+    var s = scenario.steps[i];
+    html += '<div class="tool-step" data-idx="' + i + '">';
+    html += '<div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div>';
+    html += '<div class="tool-step-body"><div class="tool-step-header">';
+    html += '<span class="tool-step-icon">' + s.icon + '</span>';
+    html += '<span class="tool-step-label">' + s.label + '</span>';
+    html += '<span class="tool-step-status"></span></div>';
+    html += '<div class="tool-step-detail">' + s.detail + '</div>';
+    html += '</div></div>';
+  }
+  html += '</div></div></div>';
+  msgs.innerHTML += html;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Build labels array
+  var labels = [];
+  for (var j = 0; j < scenario.steps.length; j++) {
+    labels.push({done: scenario.steps[j].done});
+  }
+
+  // Animate, then show answer
+  runToolSteps(containerId, labels, function() {
+    setTimeout(function() {
+      msgs.innerHTML += '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">' + scenario.answer + '</div></div>';
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 300);
+  });
+}
+
+function followupAction(text) {
+  document.getElementById('spInput').value = text;
+  sendPanelMsg();
+}
+
+var expoModifications = [];
+
+function expoModifyAction(text) {
+  var msgs = document.getElementById('spMsgs');
+  msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">' + text + '</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+  expoModifications.push(text);
+
+  var scenario = {
+    label: '"' + text + '" 반영 중',
+    steps: [
+      {icon:'🧠',label:'요청 분석',done:'완료',detail:'수정/추가 요청 확인'},
+      {icon:'📂',label:'관련 데이터 수집',done:'완료',detail:'필요한 정보 탐색 완료'},
+      {icon:'📝',label:'결과물 수정',done:'반영 완료',detail:'기존 계획서에 변경 사항 반영'}
+    ]
+  };
+
+  setTimeout(function() {
+    toolStepCounter++;
+    var containerId = 'toolSteps_' + toolStepCounter;
+    var html = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+    html += '<div style="font-size:12px;font-weight:600;margin-bottom:6px">' + scenario.label + '</div>';
+    html += '<div class="tool-steps" id="' + containerId + '">';
+    for (var i = 0; i < scenario.steps.length; i++) {
+      var s = scenario.steps[i];
+      html += '<div class="tool-step" data-idx="' + i + '"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">' + s.icon + '</span><span class="tool-step-label">' + s.label + '</span><span class="tool-step-status"></span></div><div class="tool-step-detail">' + s.detail + '</div></div></div>';
+    }
+    html += '</div></div></div>';
+    msgs.innerHTML += html;
+    msgs.scrollTop = msgs.scrollHeight;
+
+    var labels = [{done:'완료'},{done:'완료'},{done:'반영 완료'}];
+    runToolSteps(containerId, labels, function() {
+      setTimeout(function() {
+        showExpoResultUpdated();
+      }, 300);
+    });
+  }, 600);
+}
+
+function showExpoResultUpdated() {
+  var msgs = document.getElementById('spMsgs');
+  var mods = expoModifications;
+
+  // Determine what changed based on modifications
+  var hasDeadlineChange = mods.some(function(m) { return m.includes('마감') || m.includes('앞당'); });
+  var hasAssigneeChange = mods.some(function(m) { return m.includes('담당자') || m.includes('지정'); });
+  var hasResearch = mods.some(function(m) { return m.includes('조사') || m.includes('리서치'); });
+  var hasMeeting = mods.some(function(m) { return m.includes('미팅') || m.includes('킥오프'); });
+
+  var html = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+  html += '수정 사항을 반영했습니다. 변경된 부분을 확인해 주세요.';
+  html += '<div style="font-size:10px;color:var(--accent);margin:4px 0 8px">🟣 변경됨 &nbsp; 🟢 새로 추가됨</div><hr>';
+
+  // Post section
+  html += '<h3>📄 게시글: 2026 AI 박람회 준비 계획서</h3>';
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0">';
+  html += '<div style="font-size:10px;color:var(--text3);margin-bottom:6px">AI 비서 프로젝트에 저장됨</div>';
+  html += '<strong>1. 행사 개요</strong><br><span style="font-size:11px;color:var(--text2)">2026 AI World Expo · 5/15~17 · 코엑스 Hall A · 부스+발표</span><br><br>';
+
+  if (hasDeadlineChange) {
+    html += '<strong>2. 준비 일정</strong> <span class="change-badge modified">변경됨</span><br>';
+    html += '<span style="font-size:11px;color:var(--text2)"><span style="text-decoration:line-through;color:var(--text3)">4/30 발표자료</span> → <strong style="color:var(--accent)">4/25 발표자료</strong> · 기타 일정 동일</span><br><br>';
+  } else {
+    html += '<strong>2. 준비 일정</strong><br><span style="font-size:11px;color:var(--text2)">4/18 등록마감 → 4월말 자료제작 → 5/12 리허설 → 5/15 행사</span><br><br>';
+  }
+
+  if (hasAssigneeChange) {
+    html += '<strong>3. 역할 분담</strong> <span class="change-badge modified">변경됨</span><br>';
+    html += '<span style="font-size:11px;color:var(--text2)">부스 디자인: <strong style="color:var(--accent)">정하은</strong> · 발표자료: <strong style="color:var(--accent)">김서연(나)</strong> · 홍보물: <strong style="color:var(--accent)">박민수</strong> · 데모: <strong style="color:var(--accent)">이수진</strong></span><br><br>';
+  } else {
+    html += '<strong>3. 역할 분담</strong><br><span style="font-size:11px;color:var(--text2)">부스 디자인, 발표자료, 홍보물, 데모 등 8개 항목</span><br><br>';
+  }
+  html += '<strong>4. 예산 계획</strong><br><span style="font-size:11px;color:var(--text2)">항목별 정리 완료</span></div>';
+  html += '<div class="preview-link" onclick="openPopup(\'popupPost\')">📎 게시글 미리보기 →</div>';
+
+  // Task list with changes
+  html += '<h3>☑️ 업무 등록 (' + (hasResearch ? '8' : '7') + '건)</h3>';
+  html += '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">🤖 = AI가 자동 처리 가능 · 👤 = 담당자 배정 필요</div>';
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 0;margin:4px 0;font-size:11px">';
+
+  html += '<div class="task-row"><span class="ai-suggest-badge auto" style="font-size:8px">🤖 AI</span><strong>박람회 참가 등록</strong><span class="task-row-right"><span class="task-row-date urgent">마감 4/18</span></span></div>';
+
+  if (hasAssigneeChange) {
+    html += '<div class="task-row changed"><span class="ai-suggest-badge assist" style="font-size:8px">👤 정하은</span><strong>부스 디자인 시안 제작</strong><span class="task-row-right"><span class="change-badge modified">변경</span><span class="task-row-date warn">마감 4/25</span></span></div>';
+  } else {
+    html += '<div class="task-row"><span class="ai-suggest-badge assist" style="font-size:8px">👤 배정</span><strong>부스 디자인 시안 제작</strong><span class="task-row-right"><span class="task-row-date warn">마감 4/25</span></span></div>';
+  }
+
+  if (hasDeadlineChange) {
+    html += '<div class="task-row changed"><span class="ai-suggest-badge assist" style="font-size:8px">👤 ' + (hasAssigneeChange ? '김서연' : '배정') + '</span><strong>발표 자료 초안 작성</strong><span class="task-row-right"><span class="change-badge modified">변경</span><span class="task-row-date warn" style="text-decoration:line-through;margin-right:4px">4/30</span><span class="task-row-date" style="color:var(--accent);font-weight:600">→ 4/25</span></span></div>';
+  } else {
+    html += '<div class="task-row"><span class="ai-suggest-badge assist" style="font-size:8px">👤 ' + (hasAssigneeChange ? '김서연' : '배정') + '</span><strong>발표 자료 초안 작성</strong><span class="task-row-right"><span class="task-row-date warn">마감 4/30</span></span></div>';
+  }
+
+  html += '<div class="task-row"><span class="ai-suggest-badge assist" style="font-size:8px">👤 ' + (hasAssigneeChange ? '박민수' : '배정') + '</span><strong>홍보물/판촉물 디자인</strong><span class="task-row-right"><span class="task-row-date">마감 5/2</span></span></div>';
+  html += '<div class="task-row"><span class="ai-suggest-badge auto" style="font-size:8px">🤖 AI</span><strong>데모 시나리오 준비</strong><span class="task-row-right"><span class="task-row-date">마감 5/9</span></span></div>';
+
+  if (hasResearch) {
+    html += '<div class="task-row added"><span class="ai-suggest-badge auto" style="font-size:8px">🤖 AI</span><strong>경쟁사 부스 사례 조사</strong><span class="task-row-right"><span class="change-badge new">추가</span><span class="task-row-date">마감 5/9</span></span></div>';
+  } else {
+    html += '<div class="task-row"><span class="ai-suggest-badge auto" style="font-size:8px">🤖 AI</span><strong>경쟁사 부스 사례 조사</strong><span class="task-row-right"><span class="task-row-date">마감 5/9</span></span></div>';
+  }
+
+  html += '<div class="task-row" style="border-bottom:none"><span class="ai-suggest-badge assist" style="font-size:8px">👤 ' + (hasAssigneeChange ? '이수진' : '배정') + '</span><strong>리허설 및 현장 운영</strong><span class="task-row-right"><span class="task-row-date">5/12~17</span></span></div>';
+  html += '</div>';
+  html += '<div class="preview-link" onclick="openPopup(\'popupTask\')">📎 업무 상세 보기 →</div>';
+
+  // Schedule with changes
+  html += '<h3>📅 일정 등록 (' + (hasMeeting ? '5' : '4') + '건)</h3>';
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:11px">';
+
+  if (hasMeeting) {
+    html += '<div class="schedule-row added"><span style="color:var(--green);font-weight:600;min-width:44px">4/2 수</span>킥오프 미팅 <span class="change-badge new" style="margin-left:4px">추가</span></div>';
+  }
+  html += '<div class="schedule-row"><span style="color:var(--accent);font-weight:600;min-width:44px">4/7 월</span>박람회 준비 정기 미팅</div>';
+  html += '<div class="schedule-row"><span style="color:var(--red);font-weight:600;min-width:44px">4/18 금</span>참가 등록 마감일</div>';
+  html += '<div class="schedule-row"><span style="color:var(--amber);font-weight:600;min-width:44px">5/12 월</span>리허설</div>';
+  html += '<div class="schedule-row" style="border-bottom:none"><span style="color:var(--green);font-weight:600;min-width:44px">5/15~17</span>2026 AI World Expo 본행사</div>';
+  html += '</div>';
+  html += '<div class="preview-link" onclick="openPopup(\'popupSchedule\')">📎 일정 상세 보기 →</div>';
+
+  html += '<hr><div style="font-size:11px;color:var(--text2);line-height:1.6;margin:6px 0">⚠️ 가장 시급한 것은 <strong style="color:var(--red)">4월 18일 참가 등록 마감</strong>입니다 (D-19).<br>🤖 표시된 업무는 승인 후 AI가 바로 처리를 시작합니다.</div>';
+
+  html += '<div class="action-group" id="expoApproval">';
+  html += '<button class="action-primary-btn" onclick="expoReview(\'approve\')">✅ 이대로 승인하고 프로젝트에 게시</button>';
+  html += '<div class="action-secondary-row">';
+  html += '<button class="action-secondary-btn" onclick="expoReview(\'modify\')">✏️ 추가 수정</button>';
+  html += '<button class="action-secondary-btn" onclick="expoReview(\'more\')">💡 다른 추가 액션</button>';
+  html += '</div></div>';
+  html += '<div class="msg-actions" style="margin-top:8px"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>';
+  html += '</div></div>';
+  msgs.innerHTML += html;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ============================
+// 3-2 EXPO SCENARIO ENGINE
+// ============================
+let expoStep = 0;
+
+function startExpoFlow() {
+  expoStep = 1;
+  const msgs = document.getElementById('spMsgs');
+  
+  setTimeout(() => {
+    msgs.innerHTML += `<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">
+<div class="sensitive">🛡 입력 정보에 민감 항목 없음</div>
+<strong>"2026 AI 박람회"</strong> 준비를 도와드리겠습니다.<br>
+우선 몇 가지 확인이 필요해요.
+<hr>
+<h3>📋 기본 정보 확인</h3>
+<ul>
+  <li>박람회 <strong>일정</strong>(날짜)이 정해져 있나요?</li>
+  <li>우리 팀의 <strong>역할</strong>은 무엇인가요? (부스 운영, 발표, 참관 등)</li>
+  <li><strong>예산</strong>이나 <strong>담당자</strong>가 지정되어 있나요?</li>
+</ul>
+<br>알고 있는 정보를 알려주시면 그에 맞춰 준비 계획을 세울게요.<br>
+잘 모르겠으면 <strong>"알아서 정리해줘"</strong>라고 해주셔도 됩니다.
+
+<div class="followup-list" style="margin-top:10px">
+  <div class="followup-item" onclick="expoAnswer('detail')">5월 15일, 부스 운영 + 발표 예정이야<span style="color:var(--text3)">›</span></div>
+  <div class="followup-item" onclick="expoAnswer('auto')">잘 모르겠어, 알아서 정리해줘<span style="color:var(--text3)">›</span></div>
+</div>
+<div class="msg-actions"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>
+</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+    updateProgress(1);
+  }, 800);
+}
+
+
+function expoAnswer(type) {
+  const msgs = document.getElementById('spMsgs');
+  if (type === 'detail') {
+    msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">5월 15일, 부스 운영 + 발표 예정이야</div></div>';
+  } else {
+    msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">잘 모르겠어, 알아서 정리해줘</div></div>';
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+  expoStep = 2;
+  updateProgress(2);
+
+  setTimeout(function() {
+    var html = '<div class="sp-msg" id="agentMsg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+    html += '<div style="font-size:12px;font-weight:600;margin-bottom:6px">🧠 작업 유형을 분석하고 데이터를 수집합니다</div>';
+    html += '<div class="tool-steps" id="expoToolSteps">';
+    
+    html += '<div class="tool-step" data-idx="0"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">🧠</span><span class="tool-step-label">작업 유형 분석</span><span class="tool-step-status"></span></div><div class="tool-step-detail"><strong>복합 업무</strong>로 판단<br><br><span class="found-tag">업무 매니저</span> <span class="found-tag">헬퍼</span> <span class="found-tag">스케줄러</span><br>3개 에이전트 호출</div></div></div>';
+    
+    html += '<div class="tool-step" data-idx="1"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">📂</span><span class="tool-step-label">플로우 프로젝트 검색</span><span class="tool-step-status"></span></div><div class="tool-step-detail"><code>query: "박람회" "AI" "전시"</code><br><br><span class="found-count">2건</span> 과거 프로젝트 발견<br><span class="found-tag">2025 AI 박람회 준비 TF</span> <span class="found-tag">2024 CES 참가</span></div></div></div>';
+    
+    html += '<div class="tool-step" data-idx="2"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">✉️</span><span class="tool-step-label">메일 검색</span><span class="tool-step-status"></span></div><div class="tool-step-detail"><code>query: "2026 AI 박람회"</code><br><br><span class="found-count">1건</span> 참가 안내 수신 메일 확인</div></div></div>';
+    
+    html += '<div class="tool-step" data-idx="3"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">🌐</span><span class="tool-step-label">웹 검색</span><span class="tool-step-status"></span></div><div class="tool-step-detail"><code>search: "2026 AI World Expo"</code><br><br>일시: <strong>5/15~17</strong> · 코엑스 Hall A<br>등록 마감: <strong>4월 18일</strong></div></div></div>';
+    
+    html += '<div class="tool-step" data-idx="4"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">📅</span><span class="tool-step-label">캘린더 · 위키 확인</span><span class="tool-step-status"></span></div><div class="tool-step-detail">5월 일정 확인 완료<br>「박람회 운영 가이드」 사내 문서 발견</div></div></div>';
+    
+    html += '<div class="tool-step" data-idx="5"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">📝</span><span class="tool-step-label">준비 계획서 작성</span><span class="tool-step-status"></span></div><div class="tool-step-detail">게시글 + 업무 7건 + 일정 4건 생성</div></div></div>';
+    
+    html += '</div></div></div>';
+    msgs.innerHTML += html;
+    msgs.scrollTop = msgs.scrollHeight;
+
+    var stepLabels = [
+      {done:'3개 호출'},{done:'2건 발견'},{done:'1건 확인'},{done:'정보 수집'},{done:'완료'},{done:'생성 완료'}
+    ];
+    
+    runToolSteps('expoToolSteps', stepLabels, function() {
+      expoStep = 3; updateProgress(3);
+      setTimeout(function() {
+        expoStep = 4; updateProgress(4);
+        showExpoResult();
+      }, 400);
+    });
+  }, 600);
+}
+
+function runToolSteps(containerId, labels, onComplete) {
+  var steps = document.querySelectorAll('#' + containerId + ' .tool-step');
+  var msgs = document.getElementById('spMsgs');
+  var i = 0;
+  function processStep() {
+    if (i >= steps.length) { setTimeout(onComplete, 400); return; }
+    var step = steps[i];
+    var status = step.querySelector('.tool-step-status');
+    var detail = step.querySelector('.tool-step-detail');
+    step.classList.add('visible', 'running');
+    if (status) {
+      status.textContent = '';
+      var spinner = document.createElement('div');
+      spinner.className = 'tool-step-spinner';
+      status.parentElement.appendChild(spinner);
+    }
+    setTimeout(function() { msgs.scrollTop = msgs.scrollHeight; }, 50);
+    var delay = 600 + Math.random() * 500;
+    setTimeout(function() {
+      step.classList.remove('running'); step.classList.add('done');
+      var spinnerEl = step.querySelector('.tool-step-spinner');
+      if (spinnerEl) spinnerEl.remove();
+      if (status) status.textContent = labels[i] ? labels[i].done : '완료';
+      if (detail) detail.classList.add('expanded');
+      setTimeout(function() { msgs.scrollTop = msgs.scrollHeight; }, 50);
+      i++;
+      setTimeout(processStep, 300);
+    }, delay);
+  }
+  setTimeout(processStep, 300);
+}
+
+function showExpoResult() {
+  var msgs = document.getElementById('spMsgs');
+  var html = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+  html += '준비 계획을 작성했습니다. 확인해 주세요.<hr>';
+  html += '<h3>📄 게시글: 2026 AI 박람회 준비 계획서</h3>';
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0">';
+  html += '<div style="font-size:10px;color:var(--text3);margin-bottom:6px">AI 비서 프로젝트에 저장됨</div>';
+  html += '<strong>1. 행사 개요</strong><br><span style="font-size:11px;color:var(--text2)">2026 AI World Expo · 5/15~17 · 코엑스 Hall A · 부스+발표</span><br><br>';
+  html += '<strong>2. 준비 일정</strong><br><span style="font-size:11px;color:var(--text2)">4/18 등록마감 → 4월말 자료제작 → 5/12 리허설 → 5/15 행사</span><br><br>';
+  html += '<strong>3. 역할 분담 · 4. 예산 계획</strong><br><span style="font-size:11px;color:var(--text2)">부스 디자인, 발표자료, 홍보물, 데모 등 8개 항목 · 예산 항목별 정리</span></div>';
+  html += '<div class="preview-link" onclick="openPopup(\'popupPost\')">📎 게시글 미리보기 →</div>';
+
+  html += '<h3>☑️ 업무 등록 (7건)</h3>';
+  html += '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">🤖 = AI가 자동 처리 가능 · 👤 = 담당자 배정 필요</div>';
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 0;margin:4px 0;font-size:11px">';
+  html += '<div class="task-row" onclick="followupAction(\'참가 신청서 작성해줘\')"><span class="ai-suggest-badge auto" style="font-size:8px">🤖 AI</span><strong>박람회 참가 등록</strong><span class="task-row-right"><span class="task-row-date urgent">마감 4/18</span></span></div>';
+  html += '<div class="task-row" onclick="followupAction(\'부스 디자인 시안 만들어줘\')"><span class="ai-suggest-badge assist" style="font-size:8px">👤 배정</span><strong>부스 디자인 시안 제작</strong><span class="task-row-right"><span class="task-row-date warn">마감 4/25</span></span></div>';
+  html += '<div class="task-row" onclick="followupAction(\'발표 자료 초안 작성해줘\')"><span class="ai-suggest-badge assist" style="font-size:8px">👤 배정</span><strong>발표 자료 초안 작성</strong><span class="task-row-right"><span class="task-row-date warn">마감 4/30</span></span></div>';
+  html += '<div class="task-row" onclick="followupAction(\'홍보물 디자인해줘\')"><span class="ai-suggest-badge assist" style="font-size:8px">👤 배정</span><strong>홍보물/판촉물 디자인</strong><span class="task-row-right"><span class="task-row-date">마감 5/2</span></span></div>';
+  html += '<div class="task-row" onclick="followupAction(\'데모 시나리오 준비해줘\')"><span class="ai-suggest-badge auto" style="font-size:8px">🤖 AI</span><strong>데모 시나리오 준비</strong><span class="task-row-right"><span class="task-row-date">마감 5/9</span></span></div>';
+  html += '<div class="task-row" onclick="followupAction(\'경쟁사 부스 사례 조사해줘\')"><span class="ai-suggest-badge auto" style="font-size:8px">🤖 AI</span><strong>경쟁사 부스 사례 조사</strong><span class="task-row-right"><span class="task-row-date">마감 5/9</span></span></div>';
+  html += '<div class="task-row" style="border-bottom:none"><span class="ai-suggest-badge assist" style="font-size:8px">👤 배정</span><strong>리허설 및 현장 운영</strong><span class="task-row-right"><span class="task-row-date">5/12~17</span></span></div>';
+  html += '</div>';
+  html += '<div class="preview-link" onclick="openPopup(\'popupTask\')">📎 업무 상세 보기 →</div>';
+
+  html += '<h3>📅 일정 등록 (4건)</h3>';
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:11px">';
+  html += '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent);font-weight:600;min-width:44px">4/7 월</span>박람회 준비 킥오프 미팅</div>';
+  html += '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--red);font-weight:600;min-width:44px">4/18 금</span>참가 등록 마감일</div>';
+  html += '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--amber);font-weight:600;min-width:44px">5/12 월</span>리허설</div>';
+  html += '<div style="display:flex;gap:8px;padding:4px 0"><span style="color:var(--green);font-weight:600;min-width:44px">5/15~17</span>2026 AI World Expo 본행사</div></div>';
+  html += '<div class="preview-link" onclick="openPopup(\'popupSchedule\')">📎 일정 상세 보기 →</div>';
+
+  html += '<hr><div style="font-size:11px;color:var(--text2);line-height:1.6;margin:6px 0">⚠️ 가장 시급한 것은 <strong style="color:var(--red)">4월 18일 참가 등록 마감</strong>입니다 (D-19).<br>🤖 표시된 업무는 승인 후 AI가 바로 처리를 시작합니다.</div>';
+
+  // Action buttons - visually distinct
+  html += '<div class="action-group" id="expoApproval">';
+  html += '<button class="action-primary-btn" onclick="expoReview(\'approve\')">✅ 이대로 승인하고 프로젝트에 게시</button>';
+  html += '<div class="action-secondary-row">';
+  html += '<button class="action-secondary-btn" onclick="expoReview(\'modify\')">✏️ 수정 요청</button>';
+  html += '<button class="action-secondary-btn" onclick="expoReview(\'more\')">💡 다른 추가 액션</button>';
+  html += '</div></div>';
+
+  html += '<div class="msg-actions" style="margin-top:8px"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>';
+  html += '</div></div>';
+  msgs.innerHTML += html;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function expoReview(action) {
+  var msgs = document.getElementById('spMsgs');
+  var bar = document.getElementById('expoApproval');
+  if (bar) bar.style.display = 'none';
+  
+  if (action === 'approve') {
+    expoStep = 5; updateProgress(5);
+    msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">승인</div></div>';
+    msgs.scrollTop = msgs.scrollHeight;
+    setTimeout(function() {
+      var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble"><h3>📁 게시할 프로젝트를 선택해 주세요</h3><div class="followup-list" style="margin-top:8px">';
+      h += '<div class="followup-item" onclick="expoPublish(\'마케팅팀\')">📁 마케팅팀<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="expoPublish(\'디자인팀\')">📁 디자인팀<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="expoPublish(\'플로우 홈페이지 개발 및 운영관리\')">📁 플로우 홈페이지 개발 및 운영관리<span style="color:var(--text3)">›</span></div>';
+      h += '</div></div></div>';
+      msgs.innerHTML += h;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 500);
+  } else if (action === 'modify') {
+    msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">수정 요청</div></div>';
+    msgs.scrollTop = msgs.scrollHeight;
+    setTimeout(function() {
+      var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">어떤 부분을 수정할까요?<div class="followup-list" style="margin-top:8px">';
+      h += '<div class="followup-item" onclick="expoModifyAction(\'발표 자료 마감을 4/25로 앞당겨줘\')">발표 자료 마감을 4/25로 앞당겨줘<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="expoModifyAction(\'업무 담당자를 팀원별로 지정해줘\')">업무 담당자를 팀원별로 지정해줘<span style="color:var(--text3)">›</span></div>';
+      h += '</div></div></div>';
+      msgs.innerHTML += h;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 500);
+  } else if (action === 'more') {
+    msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">추가 액션</div></div>';
+    msgs.scrollTop = msgs.scrollHeight;
+    setTimeout(function() {
+      var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble"><h3>💡 추가로 도와드릴 수 있는 것들</h3><div class="followup-list" style="margin-top:8px">';
+      h += '<div class="followup-item" onclick="expoModifyAction(\'경쟁사 부스 사례 조사해줘\')">🔍 경쟁사 부스 사례 조사해줘<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="expoModifyAction(\'팀원들한테 킥오프 미팅 잡아줘\')">📅 킥오프 미팅 잡아줘<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="expoModifyAction(\'발표 주제 후보 리서치해줘\')">📊 발표 주제 리서치해줘<span style="color:var(--text3)">›</span></div>';
+      h += '</div></div></div>';
+      msgs.innerHTML += h;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 500);
+  }
+}
+
+function expoPublish(project) {
+  var msgs = document.getElementById('spMsgs');
+  expoStep = 6; updateProgress(6);
+  msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">' + project + '</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(function() {
+    var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+    h += '<div class="publish-success"><div class="ps-header"><div class="ps-icon">✓</div><div><div class="ps-title">게시 완료</div><div class="ps-sub">「' + project + '」</div></div></div>';
+    h += '<div class="publish-item"><span>📄 게시글</span> 2026 AI 박람회 준비 계획서<span class="p-check">✓</span></div>';
+    h += '<div class="publish-item"><span>☑️ 업무</span> 7건 등록 · 담당자 지정 대기<span class="p-check">✓</span></div>';
+    h += '<div class="publish-item"><span>📅 일정</span> 4건 등록 · 참가자 연결<span class="p-check">✓</span></div>';
+    h += '<div class="publish-item"><span>🔔 알림</span> 팀원에게 알림 발송됨<span class="p-check">✓</span></div></div>';
+    h += '<div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">⚡ 가장 먼저 할 일: <strong style="color:var(--red)">4/18까지 박람회 참가 등록</strong></div>';
+    h += '<div style="font-size:12px;font-weight:600;margin-top:10px">⇒ 이어서 뭘 도와드릴까요?</div>';
+    h += '<div class="followup-list" style="margin-top:6px">';
+    h += '<div class="followup-item" onclick="followupAction(\'팀원들한테 킥오프 미팅 잡아줘\')">📅 킥오프 미팅 잡아줘<span style="color:var(--text3)">›</span></div>';
+    h += '<div class="followup-item" onclick="followupAction(\'참가 등록 절차 정리해줘\')">📋 참가 등록 절차 정리해줘<span style="color:var(--text3)">›</span></div></div>';
+    h += '<div class="msg-actions" style="margin-top:8px"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>';
+    h += '</div></div>';
+    msgs.innerHTML += h;
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 800);
+}
+
+function updateProgress(step) {
+  var bar = document.getElementById('expoProgress');
+  if (!bar) {
+    var chatScreen = document.getElementById('tab-chat');
+    var msgsEl = document.getElementById('spMsgs');
+    bar = document.createElement('div');
+    bar.id = 'expoProgress';
+    bar.className = 'sp-progress';
+    chatScreen.insertBefore(bar, msgsEl);
+  }
+  var steps = [
+    {n:'1',label:'요청'},{n:'2',label:'분석'},{n:'3',label:'수집'},
+    {n:'4',label:'실행'},{n:'5',label:'검수'},{n:'6',label:'게시'}
+  ];
+  var html = '';
+  for (var i = 0; i < steps.length; i++) {
+    var cls = '';
+    if (i + 1 < step) cls = 'done';
+    else if (i + 1 === step) cls = 'current';
+    var dot = cls === 'done' ? '✓' : steps[i].n;
+    html += '<div class="sp-step ' + cls + '"><div class="sp-step-dot">' + dot + '</div>' + steps[i].label + '</div>';
+    if (i < steps.length - 1) html += '<div class="sp-step-line"></div>';
+  }
+  bar.innerHTML = html;
+  bar.style.display = 'flex';
+}
+
+function resetExpo() {
+  expoStep = 0;
+  expoModifications = [];
+  var bar = document.getElementById('expoProgress');
+  if (bar) bar.style.display = 'none';
+}
+
+// ============================
+// API FEEDBACK FLOW
+// ============================
+function startApiFeedbackFlow() {
+  var msgs = document.getElementById('spMsgs');
+
+  toolStepCounter++;
+  var containerId = 'toolSteps_' + toolStepCounter;
+
+  var html = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+  html += '<div style="font-size:12px;font-weight:600;margin-bottom:6px">API 스펙 피드백 회신을 준비합니다</div>';
+  html += '<div class="tool-steps" id="' + containerId + '">';
+  html += '<div class="tool-step" data-idx="0"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">📂</span><span class="tool-step-label">API 스펙 문서 조회</span><span class="tool-step-status"></span></div><div class="tool-step-detail"><code>query: "신규 API 스펙 초안 v2"</code><br><br><span class="found-count">1건</span> 문서 발견</div></div></div>';
+  html += '<div class="tool-step" data-idx="1"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">💬</span><span class="tool-step-label">요청 내용 분석</span><span class="tool-step-status"></span></div><div class="tool-step-detail">박민수 과장: 기획·비즈니스 관점 피드백 요청<br>2일째 회신 대기 중</div></div></div>';
+  html += '<div class="tool-step" data-idx="2"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">🧠</span><span class="tool-step-label">피드백 항목 도출</span><span class="tool-step-status"></span></div><div class="tool-step-detail">스펙 문서 분석 → 기획 관점 5개 피드백 항목 도출</div></div></div>';
+  html += '<div class="tool-step" data-idx="3"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">📝</span><span class="tool-step-label">피드백 초안 작성</span><span class="tool-step-status"></span></div><div class="tool-step-detail">게시글 형태로 피드백 초안 생성</div></div></div>';
+  html += '</div></div></div>';
+  msgs.innerHTML += html;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  var labels = [{done:'1건 확인'},{done:'분석 완료'},{done:'5개 도출'},{done:'작성 완료'}];
+  runToolSteps(containerId, labels, function() {
+    setTimeout(showApiFeedbackResult, 300);
+  });
+}
+
+function showApiFeedbackResult() {
+  var msgs = document.getElementById('spMsgs');
+  var html = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+  html += '피드백 초안을 작성했습니다. 확인해 주세요.<hr>';
+
+  html += '<h3>📝 게시글: Re: 신규 API 스펙 초안 v2 피드백</h3>';
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;font-size:12px;line-height:1.7">';
+  html += '<div style="font-size:10px;color:var(--text3);margin-bottom:6px">AI 비서 프로젝트에 저장됨</div>';
+  html += '<strong>To: 박민수 과장 (개발팀)</strong><br><hr style="margin:6px 0">';
+  html += '<ol>';
+  html += '<li><strong>인증 방식</strong> — OAuth 2.0 적용 찬성. 만료 시간 설정 기준 명시 필요</li>';
+  html += '<li><strong>에러 코드 체계</strong> — 비즈니스 에러(4xx)와 시스템 에러(5xx) 분리 제안</li>';
+  html += '<li><strong>페이지네이션</strong> — cursor 기반 적절. limit 값 20 → 50 변경 제안</li>';
+  html += '<li><strong>버전 관리</strong> — URL 경로 방식 동의. 하위 호환성 보장 기간 명시 요망</li>';
+  html += '<li><strong>Rate Limit</strong> — 분당 100회 적정. 모니터링 대시보드 제공 여부 확인</li>';
+  html += '</ol>';
+  html += '<em style="font-size:11px;color:var(--text3)">※ 전체적으로 잘 설계됨. 위 5개 항목 반영 시 기획 승인 진행 예정.</em>';
+  html += '</div>';
+  html += '<div class="preview-link" onclick="openPopup(\'popupApiFeedback\')">📎 게시글 미리보기 →</div>';
+
+  html += '<hr><div style="font-size:11px;color:var(--text2);line-height:1.6;margin:6px 0">이 피드백을 게시글로 등록하고 박민수 과장에게 멘션합니다.</div>';
+
+  html += '<div class="action-group" id="apiApproval">';
+  html += '<button class="action-primary-btn" onclick="apiFeedbackReview(\'approve\')">✅ 이대로 승인하고 프로젝트에 게시</button>';
+  html += '<div class="action-secondary-row">';
+  html += '<button class="action-secondary-btn" onclick="apiFeedbackReview(\'modify\')">✏️ 수정 요청</button>';
+  html += '</div></div>';
+  html += '<div class="msg-actions" style="margin-top:8px"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>';
+  html += '</div></div>';
+  msgs.innerHTML += html;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function apiFeedbackReview(action) {
+  var msgs = document.getElementById('spMsgs');
+  var bar = document.getElementById('apiApproval');
+  if (bar) bar.style.display = 'none';
+
+  if (action === 'approve') {
+    msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">승인</div></div>';
+    msgs.scrollTop = msgs.scrollHeight;
+    setTimeout(function() {
+      var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+      h += '<h3>📁 게시할 프로젝트를 선택해 주세요</h3>';
+      h += '<div class="followup-list" style="margin-top:8px">';
+      h += '<div class="followup-item" onclick="apiFeedbackPublish(\'[PM] flow AI 신규 / 개선 건 개발\')">📁 [PM] flow AI 신규 / 개선 건 개발<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="apiFeedbackPublish(\'개발팀\')">📁 개발팀<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="apiFeedbackPublish(\'플로우 홈페이지 개발 및 운영관리\')">📁 플로우 홈페이지 개발 및 운영관리<span style="color:var(--text3)">›</span></div>';
+      h += '</div></div></div>';
+      msgs.innerHTML += h;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 500);
+  } else if (action === 'modify') {
+    msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">수정 요청</div></div>';
+    msgs.scrollTop = msgs.scrollHeight;
+    setTimeout(function() {
+      var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">어떤 부분을 수정할까요?';
+      h += '<div class="followup-list" style="margin-top:8px">';
+      h += '<div class="followup-item" onclick="apiFeedbackModify(\'페이지네이션 항목을 좀 더 구체적으로 써줘\')">페이지네이션 항목 더 구체적으로<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="apiFeedbackModify(\'톤을 좀 더 부드럽게 바꿔줘\')">톤을 좀 더 부드럽게<span style="color:var(--text3)">›</span></div>';
+      h += '<div class="followup-item" onclick="apiFeedbackModify(\'보안 관련 항목도 추가해줘\')">보안 관련 항목 추가<span style="color:var(--text3)">›</span></div>';
+      h += '</div></div></div>';
+      msgs.innerHTML += h;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 500);
+  }
+}
+
+function apiFeedbackModify(text) {
+  var msgs = document.getElementById('spMsgs');
+  msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">' + text + '</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+
+  setTimeout(function() {
+    toolStepCounter++;
+    var containerId = 'toolSteps_' + toolStepCounter;
+    var html = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+    html += '<div style="font-size:12px;font-weight:600;margin-bottom:6px">"' + text + '" 반영 중</div>';
+    html += '<div class="tool-steps" id="' + containerId + '">';
+    html += '<div class="tool-step" data-idx="0"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">🧠</span><span class="tool-step-label">요청 분석</span><span class="tool-step-status"></span></div><div class="tool-step-detail">수정 요청 확인</div></div></div>';
+    html += '<div class="tool-step" data-idx="1"><div class="tool-step-rail"><div class="tool-step-dot"></div><div class="tool-step-line"></div></div><div class="tool-step-body"><div class="tool-step-header"><span class="tool-step-icon">📝</span><span class="tool-step-label">피드백 초안 수정</span><span class="tool-step-status"></span></div><div class="tool-step-detail">기존 초안에 변경 사항 반영</div></div></div>';
+    html += '</div></div></div>';
+    msgs.innerHTML += html;
+    msgs.scrollTop = msgs.scrollHeight;
+
+    runToolSteps(containerId, [{done:'완료'},{done:'반영 완료'}], function() {
+      setTimeout(function() {
+        var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+        h += '수정 사항을 반영했습니다. ✅<br><br>';
+        h += '<strong>"' + text + '"</strong> 처리 완료.';
+        h += '<div class="preview-link" onclick="openPopup(\'popupApiFeedback\')" style="margin:8px 0">📎 수정된 피드백 미리보기 →</div>';
+        h += '<hr>';
+        h += '<div class="action-group" id="apiApproval">';
+        h += '<button class="action-primary-btn" onclick="apiFeedbackReview(\'approve\')">✅ 이대로 승인하고 프로젝트에 게시</button>';
+        h += '<div class="action-secondary-row">';
+        h += '<button class="action-secondary-btn" onclick="apiFeedbackReview(\'modify\')">✏️ 추가 수정</button>';
+        h += '</div></div>';
+        h += '<div class="msg-actions" style="margin-top:8px"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>';
+        h += '</div></div>';
+        msgs.innerHTML += h;
+        msgs.scrollTop = msgs.scrollHeight;
+      }, 300);
+    });
+  }, 600);
+}
+
+function apiFeedbackPublish(project) {
+  var msgs = document.getElementById('spMsgs');
+  msgs.innerHTML += '<div class="sp-msg user"><div class="msg-name">나</div><div class="msg-bubble">' + project + '</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+
+  setTimeout(function() {
+    var h = '<div class="sp-msg"><div class="msg-name">AI 비서</div><div class="msg-bubble">';
+    h += '<div class="publish-success"><div class="ps-header"><div class="ps-icon">✓</div><div><div class="ps-title">게시 완료</div><div class="ps-sub">「' + project + '」</div></div></div>';
+    h += '<div class="publish-item"><span>📝 게시글</span> API 스펙 피드백 회신<span class="p-check">✓</span></div>';
+    h += '<div class="publish-item"><span>👤 멘션</span> 박민수 과장에게 알림 발송<span class="p-check">✓</span></div>';
+    h += '</div>';
+    h += '<div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">피드백을 <strong>' + project + '</strong>에 게시하고 박민수 과장에게 알림을 보냈습니다.</div>';
+    h += '<div class="preview-link" onclick="openPopup(\'popupApiFeedback\')">📎 게시된 피드백 보기 →</div>';
+    h += '<div class="followup" style="font-size:12px;font-weight:600;margin-top:10px">⇒ 이어서 뭘 도와드릴까요?</div>';
+    h += '<div class="followup-list" style="margin-top:6px">';
+    h += '<div class="followup-item" onclick="followupAction(\'오늘 일정이랑 업무를 시간대별로 계획 세워줘\')">📅 시간대별 계획 세워줘<span style="color:var(--text3)">›</span></div>';
+    h += '</div>';
+    h += '<div class="msg-actions" style="margin-top:8px"><span>👍</span><span>🔄</span><span>📋</span><span>↗</span></div>';
+    h += '</div></div>';
+    msgs.innerHTML += h;
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 800);
+}
+
+
+function quickAction(type) {
+  const map = {
+    briefing: '지금 시간 기준으로 업무 브리핑 해줘',
+    change: '어제 퇴근 후 변경된 사항 있어?',
+    schedule: '이번주 스케줄 관리해줘',
+    todo: '지금 할 수 있는 업무 알려줘',
+    newtask: '새로운 업무 진행해줘'
+  };
+  document.getElementById('spInput').value = map[type];
+  sendPanelMsg();
+}
+
+function briefingAction(text) {
+  switchTab('chat');
+  setTimeout(() => {
+    document.getElementById('spInput').value = text;
+    sendPanelMsg();
+  }, 200);
+}
+
+// Toast system
+let toastQueue = [];
+let toastShowing = false;
+
+function showToast(text, type = 'info', duration = 5000, prompt = '') {
+  toastQueue.push({ text, type, duration, prompt });
+  if (!toastShowing) processToast();
+}
+
+function processToast() {
+  if (toastQueue.length === 0) { toastShowing = false; return; }
+  toastShowing = true;
+  const { text, type, duration, prompt } = toastQueue.shift();
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<div class="toast-dot ${type}"></div><div class="toast-text">${text}</div>`;
+  toast.onclick = () => {
+    toast.classList.add('hiding');
+    setTimeout(() => { container.innerHTML = ''; }, 150);
+    if (!panelOpen) togglePanel();
+    switchTab('chat');
+    setTimeout(() => {
+      document.getElementById('spInput').value = prompt;
+      sendPanelMsg();
+    }, 350);
+  };
+  container.innerHTML = '';
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => { container.innerHTML = ''; processToast(); }, 300);
+  }, duration);
+}
+
+// Demo toasts on load
+setTimeout(() => showToast('오늘의 브리핑이 준비되었어요.', 'ok', 6000, '오늘 업무 브리핑 해줘'), 1500);
+setTimeout(() => showToast('이 프로젝트에서 처리해야할 업무가 있어요!', 'warn', 6000, '이 프로젝트에서 처리해야할 업무 알려줘'), 9000);
+setTimeout(() => showToast('14시 Q1 보고서 발표가 1시간 후 시작됩니다.', 'info', 6000, 'Q1 보고서 발표 준비해줘'), 16000);
+
+// Auto-resize textarea
+document.getElementById('spInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+
+// Popup functions
+function openPopup(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closePopup() {
+  document.querySelectorAll('.popup-overlay').forEach(function(el) {
+    el.classList.remove('open');
+  });
+}
+
+// Reminder form helpers
+function remChipSelect(el) {
+  var siblings = el.parentElement.querySelectorAll('.rem-chip');
+  siblings.forEach(function(s) { s.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+function submitReminder() {
+  var content = document.getElementById('remContent').value.trim();
+  if (!content) { document.getElementById('remContent').focus(); return; }
+  var time = document.getElementById('remTime').value;
+
+  // Add new card to the list
+  var section = document.querySelector('.rem-section');
+  var countEl = section.querySelector('.rem-count');
+  var currentCount = parseInt(countEl.textContent);
+  countEl.textContent = (currentCount + 1) + '건';
+
+  var card = document.createElement('div');
+  card.className = 'rem-card';
+  card.style.animation = 'msgIn .3s ease';
+  card.innerHTML = '<div class="rem-top"><span class="rem-type user">사용자 설정</span><span class="rem-time">' + time + ' <span class="rem-toggle on" onclick="this.classList.toggle(\'on\')"></span></span></div><div class="rem-title">' + content + '</div><div class="rem-desc">사용자 설정 · AI 실행 · 결과 알림</div>';
+
+  // Insert before the add button
+  var addBtn = document.getElementById('remAddBtn');
+  addBtn.parentElement.insertBefore(card, addBtn);
+
+  // Reset and hide form
+  document.getElementById('remContent').value = '';
+  document.getElementById('remAddForm').style.display = 'none';
+  addBtn.style.display = 'flex';
+}
+</script>
+</body>
+</html>
