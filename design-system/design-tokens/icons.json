@@ -1,0 +1,70 @@
+{
+  "$schema": "Flow AI Design System — Icon Tokens v3",
+  "$source": "Figma: FlowAI_디자인 시스템 > 아이콘&로고",
+  "$total": "917 Lucide icons + 5 AI icons + 6 LLM logos + 2 brand logos",
+
+  "config": {
+    "library": "lucide-react",
+    "defaultSize": 24,
+    "defaultStroke": 1.5,
+    "sizes": {
+      "xs": 12,
+      "sm": 16,
+      "md": 20,
+      "lg": 24,
+      "xl": 32
+    },
+    "colors": {
+      "default": "currentColor",
+      "muted": "#64748B",
+      "brand": "#5B40F8",
+      "danger": "#EF4444",
+      "success": "#22C55E",
+      "warning": "#F59E0B",
+      "info": "#3B82F6"
+    }
+  },
+
+  "figma": {
+    "file": "qOenw8eG98ScatHvjkgHmv",
+    "page": "아이콘&로고",
+    "componentSet": "Icon",
+    "property": "icon-type",
+    "totalVariants": 917
+  },
+
+  "custom": {
+    "ai": {
+      "componentSet": "AI_icon",
+      "variants": ["chatbot", "convert", "report", "consult", "avatar"]
+    },
+    "llm": {
+      "componentSet": "Component 1",
+      "variants": ["openai", "claude", "gemini", "perplexity", "grok", "deepseek"]
+    },
+    "logo": {
+      "flow": {
+        "componentSet": "logo_flow",
+        "variants": ["white/vertical", "black/vertical", "white/horizontal", "black/horizontal", "white/symbol", "black/symbol"]
+      },
+      "morningmate": {
+        "componentSet": "logo_morningmate",
+        "variants": ["white/vertical", "black/vertical", "white/horizontal", "black/horizontal", "white/symbol"]
+      }
+    }
+  },
+
+  "frequently_used": {
+    "$description": "Flow AI에서 자주 사용하는 아이콘 분류",
+    "navigation": ["menu", "x", "chevron-down", "chevron-right", "chevron-left", "arrow-left", "arrow-right", "home", "search", "settings"],
+    "actions": ["plus", "minus", "edit", "trash-2", "copy", "download", "upload", "share", "send", "refresh-cw"],
+    "communication": ["message-square", "mail", "bell", "phone", "at-sign", "link"],
+    "content": ["file", "file-text", "folder", "image", "paperclip", "bookmark", "star", "heart"],
+    "status": ["check", "check-circle", "alert-circle", "alert-triangle", "info", "x-circle", "loader"],
+    "user": ["user", "users", "avatar", "log-in", "log-out", "key", "shield"],
+    "ai": ["bot", "sparkles", "wand-2", "brain", "zap", "cpu"],
+    "data": ["bar-chart", "bar-chart-2", "pie-chart", "trending-up", "trending-down", "activity"],
+    "layout": ["layout", "grid", "list", "columns", "sidebar", "panel-left", "panel-right"],
+    "misc": ["calendar", "clock", "globe", "map-pin", "sun", "moon", "eye", "eye-off", "filter", "sort-asc"]
+  }
+}

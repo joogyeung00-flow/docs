@@ -1,0 +1,72 @@
+{
+  "$schema": "Flow AI Design System — Typography Tokens v3",
+  "$source": "Figma: Flow AI - Typography System",
+  "$total": "25 text styles / 5 groups",
+
+  "fontFamily": {
+    "sans": ["Pretendard", "Roboto", "FlowSansKR", "Noto Sans KR", "Noto Sans JP", "Be Vietnam Pro", "ui-sans-serif", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Helvetica", "Arial", "sans-serif"],
+    "mono": ["Consolas", "Menlo", "Monaco", "Liberation Mono", "Courier New", "monospace"],
+    "ios":  ["SF Pro", "-apple-system", "Helvetica Neue", "sans-serif"]
+  },
+
+  "textStyles": {
+    "display": {
+      "9xl": { "fontSize": 128, "lineHeight": 140, "fontWeight": 400 },
+      "8xl": { "fontSize": 96,  "lineHeight": 110, "fontWeight": 400 },
+      "7xl": { "fontSize": 72,  "lineHeight": 86,  "fontWeight": 400 },
+      "6xl": { "fontSize": 60,  "lineHeight": 75,  "fontWeight": 400 },
+      "5xl": { "fontSize": 48,  "lineHeight": 62,  "fontWeight": 400 }
+    },
+
+    "heading": {
+      "h1": { "fontSize": 36, "lineHeight": 48, "fontWeight": 700, "tailwind": "text-4xl font-bold" },
+      "h2": { "fontSize": 30, "lineHeight": 44, "fontWeight": 700, "tailwind": "text-3xl font-bold" },
+      "h3": { "fontSize": 24, "lineHeight": 36, "fontWeight": 700, "tailwind": "text-2xl font-bold" },
+      "h4": { "fontSize": 20, "lineHeight": 32, "fontWeight": 500, "tailwind": "text-xl font-medium" },
+      "h5": { "fontSize": 18, "lineHeight": 30, "fontWeight": 500, "tailwind": "text-lg font-medium" },
+      "h6": { "fontSize": 16, "lineHeight": 28, "fontWeight": 500, "tailwind": "text-base font-medium" }
+    },
+
+    "body": {
+      "lg-regular":   { "fontSize": 18, "lineHeight": 30, "fontWeight": 400, "tailwind": "text-lg font-normal" },
+      "lg-medium":    { "fontSize": 18, "lineHeight": 30, "fontWeight": 500, "tailwind": "text-lg font-medium" },
+      "base-regular": { "fontSize": 16, "lineHeight": 28, "fontWeight": 400, "tailwind": "text-base font-normal" },
+      "base-medium":  { "fontSize": 16, "lineHeight": 28, "fontWeight": 500, "tailwind": "text-base font-medium" },
+      "sm-regular":   { "fontSize": 14, "lineHeight": 24, "fontWeight": 400, "tailwind": "text-sm font-normal" },
+      "sm-medium":    { "fontSize": 14, "lineHeight": 24, "fontWeight": 500, "tailwind": "text-sm font-medium" }
+    },
+
+    "caption": {
+      "xs-regular":  { "fontSize": 12, "lineHeight": 20, "fontWeight": 400, "tailwind": "text-xs font-normal" },
+      "xs-medium":   { "fontSize": 12, "lineHeight": 20, "fontWeight": 500, "tailwind": "text-xs font-medium" },
+      "2xs-regular": { "fontSize": 10, "lineHeight": 16, "fontWeight": 400, "tailwind": "text-2xs font-normal" },
+      "3xs-regular": { "fontSize": 9,  "lineHeight": 14, "fontWeight": 400, "tailwind": "text-3xs font-normal" },
+      "4xs-regular": { "fontSize": 8,  "lineHeight": 12, "fontWeight": 400, "tailwind": "text-4xs font-normal" }
+    },
+
+    "code": {
+      "base": { "fontSize": 16, "lineHeight": 28, "fontWeight": 400, "fontFamily": "mono", "tailwind": "text-base font-mono" },
+      "sm":   { "fontSize": 14, "lineHeight": 24, "fontWeight": 400, "fontFamily": "mono", "tailwind": "text-sm font-mono" },
+      "xs":   { "fontSize": 12, "lineHeight": 20, "fontWeight": 400, "fontFamily": "mono", "tailwind": "text-xs font-mono" }
+    }
+  },
+
+  "fontSize": {
+    "4xs":  ["8px",  { "lineHeight": "12px" }],
+    "3xs":  ["9px",  { "lineHeight": "14px" }],
+    "2xs":  ["10px", { "lineHeight": "16px" }],
+    "xs":   ["12px", { "lineHeight": "20px" }],
+    "sm":   ["14px", { "lineHeight": "24px" }],
+    "base": ["16px", { "lineHeight": "28px" }],
+    "lg":   ["18px", { "lineHeight": "30px" }],
+    "xl":   ["20px", { "lineHeight": "32px" }],
+    "2xl":  ["24px", { "lineHeight": "36px" }],
+    "3xl":  ["30px", { "lineHeight": "44px" }],
+    "4xl":  ["36px", { "lineHeight": "48px" }],
+    "5xl":  ["48px", { "lineHeight": "62px" }],
+    "6xl":  ["60px", { "lineHeight": "75px" }],
+    "7xl":  ["72px", { "lineHeight": "86px" }],
+    "8xl":  ["96px", { "lineHeight": "110px" }],
+    "9xl":  ["128px", { "lineHeight": "140px" }]
+  }
+}
