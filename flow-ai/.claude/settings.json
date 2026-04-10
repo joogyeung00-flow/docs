@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdftoppm -f 13 -l 16 -r 200 -png \"/c/Users/flow_8/Desktop/신주경/AI/문서/플로우AI_모바일화면설계서.pdf\" \"c:/Users/flow_8/Documents/GitHub/docs/flow-ai/tmp/page\")",
+      "Bash(pdftoppm -f 5 -l 8 -r 200 -png \"/c/Users/flow_8/Desktop/신주경/AI/문서/플로우AI_모바일화면설계서.pdf\" \"c:/Users/flow_8/Documents/GitHub/docs/flow-ai/tmp/p\")",
+      "Bash(pdftoppm -f 22 -l 26 -r 200 -png \"/c/Users/flow_8/Desktop/신주경/AI/문서/플로우AI_모바일화면설계서.pdf\" \"c:/Users/flow_8/Documents/GitHub/docs/flow-ai/tmp/s\")",
+      "Bash(pdftoppm -f 34 -l 40 -r 200 -png \"/c/Users/flow_8/Desktop/신주경/AI/문서/플로우AI_모바일화면설계서.pdf\" \"c:/Users/flow_8/Documents/GitHub/docs/flow-ai/tmp/bot\")",
+      "mcp__claude_ai_Figma__get_design_context"
+    ]
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "$schema": "Flow AI Design System — Radix Colours v1",
+  "$source": "Figma: FlowAI_디자인 시스템 > Radix Colours variable collection",
+  "$ref": "https://www.radix-ui.com/colors",
+  "$note": "Figma에서 확인된 9종 색상. project 컬러(chip, badge, tag 등)의 풀 스케일로 활용.",
+
+  "$stepGuide": {
+    "1":  "앱 배경",
+    "2":  "미묘한 배경",
+    "3":  "UI 요소 배경",
+    "4":  "호버 UI 요소 배경",
+    "5":  "활성 / 선택된 UI 요소 배경",
+    "6":  "미묘한 테두리 / 구분선",
+    "7":  "UI 요소 테두리 / 포커스 링",
+    "8":  "호버 UI 요소 테두리",
+    "9":  "솔리드 배경 (진한 색, 흰 텍스트 또는 어두운 텍스트)",
+    "10": "호버 솔리드 배경",
+    "11": "저대비 텍스트",
+    "12": "고대비 텍스트"
+  },
+
+  "$pairingGuide": {
+    "whitePair":  ["grass/10", "pink/10", "purple/9", "jade/10", "cyan/9", "red/10", "teal/9"],
+    "darkPair":   ["sky/9", "mint/9"],
+    "note": "whitePair → 흰색 텍스트와 페어링 / darkPair → 어두운 텍스트와 페어링"
+  },
+
+  "red": {
+    "1":  "#fffcfc",
+    "2":  "#fff8f8",
+    "3":  "#ffefef",
+    "4":  "#ffe5e5",
+    "5":  "#fdd8d8",
+    "6":  "#f9c6c6",
+    "7":  "#f3adad",
+    "8":  "#eb8f8f",
+    "9":  "#e5484d",
+    "10": "#dc3d43",
+    "11": "#cd2b31",
+    "12": "#381316"
+  },
+
+  "pink": {
+    "1":  "#fffcfe",
+    "2":  "#fef7fb",
+    "3":  "#fee9f5",
+    "4":  "#fdd9ee",
+    "5":  "#fcc8e4",
+    "6":  "#f9b3da",
+    "7":  "#f497cb",
+    "8":  "#ee6eb5",
+    "9":  "#d6409f",
+    "10": "#cf3897",
+    "11": "#c2298a",
+    "12": "#651249"
+  },
+
+  "purple": {
+    "1":  "#fefcfe",
+    "2":  "#fbf7fe",
+    "3":  "#f7edfe",
+    "4":  "#f2e2fc",
+    "5":  "#ead5f9",
+    "6":  "#e0c4f4",
+    "7":  "#d1afec",
+    "8":  "#be93e4",
+    "9":  "#8e4ec6",
+    "10": "#8347bc",
+    "11": "#8145b5",
+    "12": "#402060"
+  },
+
+  "jade": {
+    "1":  "#fbfefd",
+    "2":  "#f4fbf7",
+    "3":  "#e6f7ed",
+    "4":  "#d6f1e3",
+    "5":  "#c3e9d7",
+    "6":  "#acdec8",
+    "7":  "#8ecfb6",
+    "8":  "#5fb8a5",
+    "9":  "#29a383",
+    "10": "#26997b",
+    "11": "#208368",
+    "12": "#1d3b31"
+  },
+
+  "teal": {
+    "1":  "#fafefd",
+    "2":  "#f3fbf9",
+    "3":  "#e0f8f3",
+    "4":  "#ccf3ea",
+    "5":  "#b8eae0",
+    "6":  "#a1dad0",
+    "7":  "#83c5ba",
+    "8":  "#53b9ab",
+    "9":  "#12a594",
+    "10": "#0d9b8a",
+    "11": "#008573",
+    "12": "#0d3d38"
+  },
+
+  "cyan": {
+    "1":  "#fafdfe",
+    "2":  "#f2fafb",
+    "3":  "#def7f9",
+    "4":  "#caf1f6",
+    "5":  "#b5e9f0",
+    "6":  "#9ddde7",
+    "7":  "#7dcedc",
+    "8":  "#3db9cf",
+    "9":  "#00a2c7",
+    "10": "#0797bc",
+    "11": "#107d98",
+    "12": "#0d3c48"
+  },
+
+  "sky": {
+    "1":  "#f9feff",
+    "2":  "#f1fafd",
+    "3":  "#e1f6fd",
+    "4":  "#d1f0fa",
+    "5":  "#bee7f5",
+    "6":  "#a9daed",
+    "7":  "#8dcae3",
+    "8":  "#60b3d7",
+    "9":  "#7ce2fe",
+    "10": "#74daf8",
+    "11": "#00749e",
+    "12": "#1d3e56"
+  },
+
+  "mint": {
+    "1":  "#f9fefd",
+    "2":  "#f2fbf9",
+    "3":  "#ddf9f2",
+    "4":  "#c8f4e9",
+    "5":  "#b3ecdf",
+    "6":  "#9de5d4",
+    "7":  "#7dd4c0",
+    "8":  "#4cc4ad",
+    "9":  "#86ead4",
+    "10": "#7de0cb",
+    "11": "#27b08b",
+    "12": "#16433c"
+  },
+
+  "grass": {
+    "1":  "#fbfefb",
+    "2":  "#f5fbf5",
+    "3":  "#e9f6e9",
+    "4":  "#daf1db",
+    "5":  "#c9e8ca",
+    "6":  "#b2dab4",
+    "7":  "#94c99a",
+    "8":  "#65ba74",
+    "9":  "#46a758",
+    "10": "#3d9e4f",
+    "11": "#297c3b",
+    "12": "#1b311e"
+  },
+
+  "$usageExamples": {
+    "successTag":    { "bg": "jade/3",    "text": "jade/11",   "border": "jade/6"   },
+    "errorTag":      { "bg": "red/3",     "text": "red/11",    "border": "red/6"    },
+    "warningTag":    { "bg": "sky/3",     "text": "sky/11",    "border": "sky/6"    },
+    "infoTag":       { "bg": "cyan/3",    "text": "cyan/11",   "border": "cyan/6"   },
+    "solidSuccess":  { "bg": "grass/10",  "text": "white"                           },
+    "solidDanger":   { "bg": "red/10",    "text": "white"                           },
+    "solidInfo":     { "bg": "sky/9",     "text": "dark"                            },
+    "solidMint":     { "bg": "mint/9",    "text": "dark"                            },
+    "solidPurple":   { "bg": "purple/9",  "text": "white"                           },
+    "solidPink":     { "bg": "pink/10",   "text": "white"                           },
+    "solidTeal":     { "bg": "teal/9",    "text": "white"                           },
+    "solidJade":     { "bg": "jade/10",   "text": "white"                           },
+    "solidCyan":     { "bg": "cyan/9",    "text": "white"                           }
+  }
+}

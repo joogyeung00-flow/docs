@@ -1,0 +1,2941 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLOW-001 AI 스마트 비서 프로토타입 v5.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50:'#F3F1FF',100:'#E9E5FF',200:'#D6D0FF',300:'#B8AAFF',
+          400:'#947DFF',500:'#5B40F8',600:'#4C34D1',700:'#3D29AA',
+          800:'#2E1F83',900:'#1F155C'
+        },
+      },
+      fontFamily: {
+        sans: ['Pretendard','Roboto','Noto Sans KR','ui-sans-serif','-apple-system','sans-serif'],
+      },
+      borderRadius: {
+        none:'0px', sm:'2px', DEFAULT:'4px', md:'6px', lg:'8px',
+        xl:'12px', '2xl':'16px', '3xl':'24px', full:'9999px',
+      },
+      boxShadow: {
+        sm: '0 1px 2px 0 rgba(0,0,0,0.05)',
+        DEFAULT: '0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1)',
+        md: '0 2px 4px -2px rgba(0,0,0,0.1), 0 4px 6px -1px rgba(0,0,0,0.1)',
+        lg: '0 4px 6px -4px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.1)',
+      },
+      keyframes: {
+        fadeIn:   { from:{opacity:'0'}, to:{opacity:'1'} },
+        slideUp:  { from:{opacity:'0',transform:'translateY(12px)'}, to:{opacity:'1',transform:'translateY(0)'} },
+        scaleIn:  { from:{opacity:'0',transform:'scale(0.9)'}, to:{opacity:'1',transform:'scale(1)'} },
+        shimmer:  { '0%,100%':{opacity:'1'}, '50%':{opacity:'0.4'} },
+        bounce:   { '0%,100%':{transform:'translateY(0)'}, '50%':{transform:'translateY(-6px)'} },
+      },
+      animation: {
+        'fade-in':  'fadeIn 150ms cubic-bezier(0,0,0.2,1)',
+        'slide-up': 'slideUp 250ms cubic-bezier(0.34,1.56,0.64,1)',
+        'scale-in': 'scaleIn 150ms cubic-bezier(0.34,1.56,0.64,1)',
+        'shimmer':  'shimmer 1.5s ease-in-out infinite',
+        'bounce-sm':'bounce 2s ease-in-out infinite',
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',sans-serif; background:#F1F5F9; }
+  .screen { display:none; }
+  .screen.active { display:flex; }
+  .dot-typing span { animation: shimmer 1.5s ease-in-out infinite; }
+  .dot-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-typing span:nth-child(3) { animation-delay: 0.4s; }
+  input:focus { outline:none; }
+  .chat-area::-webkit-scrollbar { width:4px; }
+  .chat-area::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:9999px; }
+  .summary-cards::-webkit-scrollbar { display:none; }
+  .summary-cards { -ms-overflow-style:none; scrollbar-width:none; scroll-snap-type:x mandatory; }
+  .summary-cards > div { scroll-snap-align:start; }
+  @keyframes popIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+  .animate-pop-in { animation: popIn 300ms cubic-bezier(0.34,1.56,0.64,1) both; }
+  .char-card { transition: all 200ms ease; }
+  .char-card.selected { border-color: #5B40F8; background: #F3F1FF; box-shadow: 0 0 0 2px #5B40F8; }
+  .personality-chip { transition: all 150ms ease; }
+  .personality-chip.selected { background: #5B40F8; color: white; border-color: #5B40F8; }
+
+  /* 마크다운 말풍선 타이포그래피 */
+  .md-bubble p { margin-bottom: 0.35em; line-height: 1.65; }
+  .md-bubble p:last-child { margin-bottom: 0; }
+  .md-bubble strong { color: #1e293b; font-weight: 700; }
+  .md-bubble em { color: #64748b; font-style: normal; font-size: 0.85em; }
+  .md-bubble ul, .md-bubble ol { margin: 0.4em 0; padding-left: 1.25em; }
+  .md-bubble li { margin-bottom: 0.25em; line-height: 1.6; }
+  .md-bubble li::marker { color: #94a3b8; }
+  .md-bubble ol li::marker { color: #5B40F8; font-weight: 700; font-size: 0.85em; }
+  .md-bubble h4 { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.4em; margin-top: 0.5em; letter-spacing: 0.02em; }
+  .md-bubble blockquote { border-left: 3px solid #5B40F8; padding-left: 0.75em; margin: 0.5em 0; color: #475569; }
+  .md-bubble hr { border: none; border-top: 1px solid #e2e8f0; margin: 0.6em 0; }
+
+  /* 플로우 조회 블록 */
+  .flow-query-block { background: #ffffff; border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
+  .flow-query-block p { margin-bottom: 0; }
+  .flow-query-block h3, .flow-query-block h4 { margin: 0; font-size: inherit; font-weight: inherit; }
+  .flow-query-header { display:flex; align-items:center; cursor:pointer; gap:10px; }
+  .flow-query-header .fq-icon { width:24px; height:24px; border-radius:50%; background:#5B40F8; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .flow-query-header .fq-icon svg { width:14px; height:14px; color:white; }
+  .flow-query-header .fq-title { font-size:14px; font-weight:600; color:#1e293b; flex:1; }
+  .flow-query-header .fq-toggle { width:20px; height:20px; display:flex; align-items:center; justify-content:center; transition:transform 200ms; flex-shrink:0; }
+  .flow-query-body { overflow:hidden; transition: max-height 300ms ease, opacity 200ms ease; padding-top:16px; padding-left:2px; }
+  /* 타임라인 스텝 */
+  .flow-query-step { position:relative; padding: 0 0 20px 28px; }
+  .flow-query-step:last-child { padding-bottom:0; }
+  /* 세로 연결선 */
+  .flow-query-step::before { content:''; position:absolute; left:4px; top:12px; bottom:0; width:1.5px; background:#d4d0f8; }
+  .flow-query-step:last-child::before { display:none; }
+  /* 타임라인 dot */
+  .flow-query-step .fq-dot { position:absolute; left:0; top:4px; width:10px; height:10px; border-radius:50%; background:#5B40F8; flex-shrink:0; }
+  .flow-query-step .fq-content { flex:1; min-width:0; }
+  .flow-query-step .fq-step-title { font-size:14px; font-weight:700; color:#1e293b; margin-bottom:6px; }
+  /* 서브 아이템 */
+  .fq-sub-item { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .fq-sub-item .fq-sub-icon { font-size:13px; color:#8b7cf8; flex-shrink:0; }
+  .fq-sub-item .fq-sub-label { font-size:13px; color:#94a3b8; }
+  .fq-sub-item .fq-sub-desc { font-size:13px; color:#475569; margin-bottom:4px; padding-left:2px; }
+  /* 칩 */
+  .flow-query-chip { display:inline-flex; align-items:center; gap:4px; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500; margin:3px 4px 3px 0; border:1px solid #e2e8f0; background:#fff; color:#475569; }
+  .flow-query-chip.primary { background:#EDE9FE; border-color:#EDE9FE; color:#5B40F8; }
+  /* 파일 참조 */
+  .fq-file { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px; color:#475569; margin:4px 0; }
+  .fq-file .fq-file-icon { width:20px; height:20px; border-radius:4px; background:#7c6cf0; display:flex; align-items:center; justify-content:center; }
+  .fq-file .fq-file-icon svg { width:12px; height:12px; color:white; }
+  .fq-file .fq-file-tag { font-size:11px; color:#5B40F8; font-weight:500; margin-left:4px; }
+  .fq-token { font-size:12px; color:#8b7cf8; margin-top:4px; }
+  .fq-result { font-size:13px; color:#94a3b8; margin-top:2px; }
+  .fq-result-badge { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:20px; background:#EDE9FE; color:#5B40F8; font-size:12px; font-weight:500; margin-top:8px; }
+  .md-bubble code { background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.85em; color: #5B40F8; }
+
+  /* AI 응답 — 마크다운 스타일 (말풍선 아닌 전체 폭 레이아웃) */
+  .ai-response { padding: 0; }
+  .ai-response .ai-header { padding-bottom: 12px; margin-bottom: 4px; }
+  .ai-response-body { font-size: 14px; color: #1e293b; line-height: 1.7; }
+  /* 스트리밍: 자식 요소 초기 숨김 */
+  .ai-response-body.streaming > * { opacity: 0; transform: translateY(6px); transition: opacity 200ms ease, transform 200ms ease; }
+  .ai-response-body.streaming > .streamed { opacity: 1; transform: translateY(0); }
+  .ai-response-body p { margin-bottom: 0.5em; }
+  .ai-response-body p:last-child { margin-bottom: 0; }
+  .ai-response-body strong { color: #1e293b; font-weight: 700; }
+  .ai-response-body em { color: #64748b; font-style: normal; font-size: 0.9em; }
+  .ai-response-body ul, .ai-response-body ol { margin: 0.5em 0; padding-left: 1.3em; }
+  .ai-response-body li { margin-bottom: 0.3em; line-height: 1.65; }
+  .ai-response-body li::marker { color: #94a3b8; }
+  .ai-response-body ol li::marker { color: #5B40F8; font-weight: 700; }
+  .ai-response-body h3 { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 1em 0 0.5em; }
+  .ai-response-body h4 { font-size: 0.85rem; font-weight: 700; color: #475569; margin: 1em 0 0.4em; letter-spacing: 0.01em; }
+  .ai-response-body blockquote { border-left: 3px solid #f59e0b; background: #fffbeb; padding: 10px 14px; margin: 0.8em 0; border-radius: 0 8px 8px 0; color: #92400e; font-size: 13px; line-height: 1.6; }
+  .ai-response-body hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
+  .ai-response-body code { background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.85em; color: #5B40F8; }
+
+  /* AI 카드 위젯 (인터랙티브 요소) */
+  .ai-card-widget { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+  .ai-card-widget:hover { border-color: #cbd5e1; }
+
+  /* AI 피드백 버튼 (좋아요/싫어요/복사/공유) */
+  .ai-feedback { display: flex; align-items: center; gap: 4px; margin-top: 16px; padding-top: 8px; }
+  .ai-feedback button { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: none; background: transparent; cursor: pointer; color: #94a3b8; transition: all 150ms; font-size: 15px; }
+  .ai-feedback button:hover { background: #f1f5f9; color: #64748b; }
+  .ai-feedback button.active { color: #5B40F8; background: #F3F1FF; }
+
+  /* AI 제안 칩 (어떻게 더 도와줄까요?) */
+  .ai-suggest-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .ai-suggest-title { font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .ai-suggest-pill { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 13px; color: #334155; cursor: pointer; transition: all 150ms; text-align: left; margin-bottom: 8px; }
+  .ai-suggest-pill:hover { border-color: #5B40F8; background: #F9F8FE; color: #5B40F8; }
+  .ai-suggest-pill:last-child { margin-bottom: 0; }
+  .ai-suggest-pill .arrow { color: #94a3b8; font-size: 16px; flex-shrink: 0; margin-left: 8px; transition: color 150ms; }
+  .ai-suggest-pill:hover .arrow { color: #5B40F8; }
+  .ai-suggest-pill.selected { border-color: #5B40F8; background: #F3F1FF; color: #5B40F8; font-weight: 500; }
+  .ai-suggest-pill.disabled { opacity: 0.35; pointer-events: none; }
+
+  /* 반응형 — 데스크톱에서 iPhone 16 Pro 프레임(393×852pt) */
+  @media (min-width: 640px) {
+    #app { border-radius: 40px; margin-top: 32px; margin-bottom: 32px; height: 852px; max-height: calc(100vh - 64px); }
+    body { display: flex; justify-content: center; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== App Container ===== -->
+<div id="app" class="mx-auto w-full max-w-[393px] h-screen bg-white relative overflow-hidden shadow-lg">
+
+  <!-- ===== Toast ===== -->
+  <div id="toast" class="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 pointer-events-none transition-opacity duration-150" style="max-width:340px"></div>
+
+  <!-- ===== SCR-SCENARIO: 시나리오 선택 (시간대별 타임라인) ===== -->
+  <div id="scr-scenario" class="screen active flex-col h-full" style="background:linear-gradient(135deg,#F8FAFC 0%,#EEF2FF 50%,#F3F1FF 100%)">
+    <div class="flex-1 flex flex-col px-5 overflow-y-auto">
+      <!-- 헤더 -->
+      <div class="text-center pt-7 pb-3">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center mx-auto mb-3 shadow-lg">
+          <span class="text-2xl">✨</span>
+        </div>
+        <h1 class="text-xl font-bold text-gray-900">AI 스마트 비서</h1>
+        <p class="text-sm text-gray-500 mt-1">하루 중 시나리오를 선택하세요</p>
+      </div>
+
+      <!-- 시간대별 타임라인 -->
+      <div class="relative mt-1">
+        <!-- 타임라인 세로선 -->
+        <div class="absolute left-[23px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-amber-200 via-blue-200 to-purple-300"></div>
+
+        <!-- 1. 오전 출근 (AM 8:50) -->
+        <button onclick="startScenario('morning')" class="relative w-full flex items-start gap-3 py-3 group text-left">
+          <div class="relative z-10 w-12 h-12 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all">
+            <span class="text-lg">🌅</span>
+          </div>
+          <div class="flex-1 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm group-hover:shadow-md group-hover:border-amber-300 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-bold text-amber-600">AM 8:50</span>
+              <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">출근</span>
+            </div>
+            <p class="text-sm font-bold text-gray-900">오전 브리핑 알림</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">출근길에 오늘의 일정, 마감 업무, 밤사이 변화를 정리한 브리핑 수신</p>
+            <div class="flex items-center gap-1 mt-2.5 flex-wrap">
+              <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">🔔 푸시</span>
+              <span class="text-gray-300 text-xs">→</span>
+              <span class="text-[10px] text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full font-medium">오전 브리핑</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- 2. 일정 준비 알림 (PM 1:30) -->
+        <button onclick="startScenario('afternoon')" class="relative w-full flex items-start gap-3 py-3 group text-left">
+          <div class="relative z-10 w-12 h-12 rounded-full bg-gradient-to-br from-blue-200 to-cyan-300 flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all">
+            <span class="text-lg">📅</span>
+          </div>
+          <div class="flex-1 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm group-hover:shadow-md group-hover:border-blue-300 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-bold text-blue-600">PM 1:30</span>
+              <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">업무 중</span>
+            </div>
+            <p class="text-sm font-bold text-gray-900">일정 준비 알림</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">스프린트 리뷰 30분 전, 회의 정보와 준비 사항 안내</p>
+            <div class="flex items-center gap-1 mt-2.5 flex-wrap">
+              <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">🔔 푸시</span>
+              <span class="text-gray-300 text-xs">→</span>
+              <span class="text-[10px] text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full font-medium">일정 준비 채팅</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- 3. 퇴근 전 (PM 5:30) -->
+        <button onclick="startScenario('evening')" class="relative w-full flex items-start gap-3 py-3 group text-left">
+          <div class="relative z-10 w-12 h-12 rounded-full bg-gradient-to-br from-purple-300 to-pink-400 flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all">
+            <span class="text-lg">🌆</span>
+          </div>
+          <div class="flex-1 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm group-hover:shadow-md group-hover:border-purple-300 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-bold text-purple-600">PM 5:30</span>
+              <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">퇴근 전</span>
+            </div>
+            <p class="text-sm font-bold text-gray-900">하루 마무리 리포트</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">오늘 처리한 업무 요약, 미처리 업무, 내일 할 일 정리</p>
+            <div class="flex items-center gap-1 mt-2.5 flex-wrap">
+              <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">🔔 푸시</span>
+              <span class="text-gray-300 text-xs">→</span>
+              <span class="text-[10px] text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full font-medium">마무리 채팅</span>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- 사이드바 진입 (별도 카드) -->
+      <div class="mt-2 mb-3">
+        <button onclick="startScenario('sidebar')" class="w-full flex items-center gap-3 p-4 bg-white/70 rounded-2xl border border-gray-200 hover:border-brand-300 hover:shadow-md transition-all group text-left">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0">
+            <span class="text-lg">☰</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-gray-900 group-hover:text-brand-600 transition-colors">사이드바 진입</p>
+            <p class="text-xs text-gray-500 mt-0.5">앱 내에서 AI 비서 메뉴로 직접 진입</p>
+            <div class="flex items-center gap-1 mt-2 flex-wrap">
+              <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">Flow AI</span>
+              <span class="text-gray-300 text-xs">→</span>
+              <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">사이드바</span>
+              <span class="text-gray-300 text-xs">→</span>
+              <span class="text-[10px] text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full font-medium">AI 비서 홈</span>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- 초기화 -->
+      <div class="text-center pb-5">
+        <button onclick="resetAllState()" class="text-xs text-gray-400 hover:text-gray-600 transition-colors underline">데이터 초기화 (온보딩부터 다시)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCR-PHONE: 모바일 홈 화면 시뮬레이션 (시나리오 A) ===== -->
+  <div id="scr-phone" class="screen flex-col h-full" style="background:linear-gradient(180deg,#1a1a2e 0%,#16213e 40%,#0f3460 100%)">
+    <!-- 상태바 -->
+    <div class="flex items-center justify-between px-6 pt-4 pb-2">
+      <span class="text-sm font-medium text-white/90" id="phoneTime">9:41</span>
+      <div class="flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-white/80" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+        <svg class="w-4 h-4 text-white/80" fill="currentColor" viewBox="0 0 24 24"><path d="M2 22h20V2z" opacity="0.3"/><path d="M2 22h20V2L2 22zm18-2H6.83L20 6.83V20z"/></svg>
+        <div class="flex items-center gap-0.5">
+          <div class="w-6 h-3 rounded-sm border border-white/60 flex items-center p-0.5">
+            <div class="h-full w-4/5 bg-green-400 rounded-[1px]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 시계 / 날짜 -->
+    <div class="flex-1 flex flex-col items-center pt-16">
+      <p class="text-6xl font-light text-white tracking-tight" id="phoneClock">9:41</p>
+      <p class="text-base text-white/60 mt-2" id="phoneDate">4월 9일 수요일</p>
+
+      <!-- 앱 아이콘 그리드 (배경 소품) -->
+      <div class="grid grid-cols-4 gap-5 mt-16 px-8 opacity-40">
+        <div class="w-14 h-14 rounded-2xl bg-green-500/30 flex items-center justify-center"><span class="text-xl">📞</span></div>
+        <div class="w-14 h-14 rounded-2xl bg-blue-500/30 flex items-center justify-center"><span class="text-xl">💬</span></div>
+        <div class="w-14 h-14 rounded-2xl bg-orange-500/30 flex items-center justify-center"><span class="text-xl">📷</span></div>
+        <div class="w-14 h-14 rounded-2xl bg-purple-500/30 flex items-center justify-center"><span class="text-xl">🎵</span></div>
+        <div class="w-14 h-14 rounded-2xl bg-red-500/30 flex items-center justify-center"><span class="text-xl">📧</span></div>
+        <div class="w-14 h-14 rounded-2xl bg-cyan-500/30 flex items-center justify-center"><span class="text-xl">📅</span></div>
+        <div class="w-14 h-14 rounded-2xl bg-brand-500/30 flex items-center justify-center"><span class="text-xl">⚡</span></div>
+        <div class="w-14 h-14 rounded-2xl bg-pink-500/30 flex items-center justify-center"><span class="text-xl">⚙️</span></div>
+      </div>
+    </div>
+
+    <!-- 푸시 알림 (시뮬레이션 — 위에서 슬라이드 인) -->
+    <div id="phonePush" class="absolute top-10 left-3 right-3 z-30 opacity-0 pointer-events-none" style="transform:translateY(-100%);transition:all 400ms cubic-bezier(0.34,1.56,0.64,1)">
+      <div onclick="phonePushTap()" class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-4 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform" style="border:1px solid rgba(255,255,255,0.3)">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
+          <span class="text-lg" id="phonePushEmoji">✨</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-gray-900">flow AI</span>
+              <span class="text-[10px] text-gray-400">· AI 비서</span>
+            </div>
+            <span class="text-[10px] text-gray-400">지금</span>
+          </div>
+          <p class="text-sm font-medium text-gray-900 mt-0.5" id="phonePushTitle">좋은 아침이에요! 오전 브리핑 도착 📋</p>
+          <p class="text-xs text-gray-500 mt-0.5 truncate" id="phonePushSub">오늘 일정 3건, 마감 업무 2건, 밤사이 변경 10건을 정리했어요.</p>
+        </div>
+      </div>
+      <p class="text-center text-[10px] text-white/40 mt-2">탭하여 브리핑 확인</p>
+    </div>
+
+    <!-- 하단 홈 인디케이터 -->
+    <div class="flex justify-center pb-3">
+      <div class="w-32 h-1 rounded-full bg-white/30"></div>
+    </div>
+
+    <!-- 돌아가기 -->
+    <button onclick="showScreen('scr-scenario')" class="absolute top-4 right-14 z-20 text-white/40 hover:text-white/70 transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <!-- ===== SCR-000: 메인 채팅 화면 ===== -->
+  <div id="scr-000" class="screen flex-col h-full bg-white">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-2 py-3">
+      <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="flex items-center gap-1">
+          <span class="text-lg font-bold text-gray-900">flow AI</span>
+        </div>
+        <!-- 프롬프트 가드 뱃지 -->
+        <div class="relative ml-1">
+          <div class="w-6 h-6 rounded-full border-2 border-brand-400 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <div class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-brand-500 rounded-full"></div>
+        </div>
+      </div>
+      <!-- 프로필 + 시나리오 돌아가기 -->
+      <div class="flex items-center gap-2">
+        <button onclick="showScreen('scr-scenario')" class="p-2 text-gray-400 hover:text-gray-600 transition-colors" title="시나리오 선택으로">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 콘텐츠 영역 -->
+    <div class="flex-1 flex flex-col px-6 overflow-y-auto">
+      <div class="mt-16">
+        <p class="text-lg text-gray-900">신주경님, 안녕하세요.</p>
+        <h2 class="mt-1 text-2xl font-bold text-gray-900">무엇을 도와드릴까요?</h2>
+      </div>
+      <!-- Quick Actions -->
+      <div class="mt-10 space-y-3">
+        <button onclick="showComingSoon('플로우 검색')" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full hover:border-brand-300 hover:bg-brand-50 transition-colors">
+          <svg class="w-5 h-5 text-brand-500" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="8" fill="#5B40F8" opacity="0.15"/><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z" fill="#5B40F8"/></svg>
+          <span class="text-sm font-medium text-gray-900">플로우 검색</span>
+        </button><br>
+        <button onclick="showComingSoon('웹 검색')" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full hover:border-brand-300 hover:bg-brand-50 transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+          <span class="text-sm font-medium text-gray-900">웹 검색</span>
+        </button><br>
+        <button onclick="showComingSoon('이미지 생성')" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full hover:border-brand-300 hover:bg-brand-50 transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span class="text-sm font-medium text-gray-900">이미지 생성</span>
+        </button><br>
+        <button onclick="showComingSoon('AI 챗봇')" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full hover:border-brand-300 hover:bg-brand-50 transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+          <span class="text-sm font-medium text-gray-900">AI 챗봇</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="px-3 pb-3">
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
+        <div class="px-4 pt-4 pb-2">
+          <input id="mainChatInput" type="text" placeholder="업무부터 일상 질문까지, 무엇이든 물어보세요."
+            class="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 border-none outline-none"
+            onkeydown="if(event.key==='Enter')sendMainMessage()">
+        </div>
+        <div class="flex items-center justify-between px-3 pb-3">
+          <div class="flex items-center gap-0.5">
+            <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </button>
+            <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+            </button>
+            <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+            </button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button class="flex items-center gap-1 px-2 py-1.5 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <button onclick="sendMainMessage()" class="w-9 h-9 flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white rounded-xl transition-colors flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="mt-2 text-[11px] text-gray-400 text-center leading-relaxed">플로우 AI의 대화는 LLM에 학습·기록되지 않으며, 프롬프트 가드로 안전하게 처리됩니다.</p>
+    </div>
+
+  </div>
+
+  <!-- ===== Sidebar Overlay ===== -->
+  <div id="sidebarOverlay" class="absolute inset-0 bg-black/30 z-40 opacity-0 pointer-events-none transition-opacity duration-200" onclick="toggleSidebar()"></div>
+
+  <!-- ===== Sidebar ===== -->
+  <div id="sidebar" class="absolute top-0 left-0 h-full w-[300px] z-50 shadow-xl flex flex-col" style="max-width:300px;transform:translateX(-100%);transition:transform 250ms ease-in-out;background:#F9F8FE">
+    <div class="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+      <div></div>
+      <button onclick="toggleSidebar()" class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-3 pt-2">
+      <!-- 새 채팅 -->
+      <button onclick="toggleSidebar();showScreen('scr-000')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors text-left">
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <span class="text-sm text-gray-700">새 채팅</span>
+      </button>
+      <!-- AI 업무 매니저 -->
+      <button onclick="toggleSidebar();showComingSoon('AI 업무 매니저')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors text-left">
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        <span class="text-sm text-gray-700">AI 업무 매니저</span>
+      </button>
+      <!-- AI 챗봇 -->
+      <button onclick="toggleSidebar();showComingSoon('AI 챗봇')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors text-left">
+        <div class="flex items-center gap-3">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+          <span class="text-sm text-gray-700">AI 챗봇</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+      <!-- AI 비서 (핵심 메뉴) -->
+      <button onclick="toggleSidebar();enterAssistant()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-brand-50 transition-colors text-left group">
+        <div class="flex items-center gap-3">
+          <div class="w-5 h-5 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
+            <span class="text-[10px]" id="sidebarCharEmoji">🐙</span>
+          </div>
+          <span class="text-sm text-gray-700 font-medium">AI 비서</span>
+        </div>
+        <div class="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+          <span class="text-[10px] text-white font-bold">3</span>
+        </div>
+      </button>
+
+      <!-- 최근 대화 -->
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <button onclick="toggleRecentChats()" class="w-full flex items-center justify-between px-3 py-2 text-left">
+          <span class="text-xs font-medium text-gray-400">최근 대화</span>
+          <svg id="recentChevron" class="w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="recentChatList">
+          <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left">
+            <span class="text-sm text-gray-600 truncate">고객사 피드백 정리</span>
+          </button>
+          <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left">
+            <span class="text-sm text-gray-600 truncate">이번 주 업무 리포트 정리해줘</span>
+          </button>
+          <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left">
+            <span class="text-sm text-gray-600 truncate">거래처 응대 매뉴얼 요청</span>
+          </button>
+          <button class="px-3 py-2 text-sm text-brand-500 font-medium hover:text-brand-600 transition-colors">+ 더 보기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Footer: 프로필 (AI 맞춤 설정 진입점) -->
+    <div class="px-3 py-3 border-t border-gray-100">
+      <button onclick="toggleSidebar();openProfileMenu()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors text-left">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-300 to-pink-300 flex items-center justify-center flex-shrink-0">
+          <span class="text-sm">🧑‍💻</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <p class="text-sm font-medium text-gray-700">신주경</p>
+            <span class="text-[10px] text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded font-medium">책임</span>
+          </div>
+          <p class="text-xs text-gray-400">PM3팀</p>
+        </div>
+        <!-- 캐릭터 미니 아이콘 -->
+        <div id="sidebarProfileChar" class="w-6 h-6 rounded-full flex items-center justify-center" style="background:#FFE4F0">
+          <span class="text-xs" id="sidebarProfileCharEmoji">🐙</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCR-ONBOARD: AI 맞춤 설정 온보딩 ===== -->
+  <div id="scr-onboard" class="screen flex-col h-full bg-white">
+    <!-- Header -->
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+      <button onclick="showScreen('scr-000')" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <span class="text-base font-bold text-gray-900">AI 맞춤 설정</span>
+    </div>
+
+    <!-- 스텝 인디케이터 -->
+    <div class="flex items-center justify-center gap-2 pt-6 pb-2">
+      <div id="stepDot1" class="w-8 h-1.5 rounded-full bg-brand-500 transition-colors"></div>
+      <div id="stepDot2" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
+    </div>
+
+    <!-- Step 1: 캐릭터 선택 -->
+    <div id="onboardStep1" class="flex-1 overflow-y-auto px-6 pt-6 pb-4">
+      <div class="text-center mb-2">
+        <h2 class="text-2xl font-bold text-gray-900">AI 캐릭터를 선택하세요</h2>
+        <p class="mt-2 text-sm text-gray-500">나만의 AI 파트너를 골라보세요.<br>나중에 언제든 바꿀 수 있어요.</p>
+      </div>
+
+      <div class="mt-8 space-y-4">
+        <!-- 플로키 -->
+        <button onclick="selectCharacter('floki')" id="char-floki" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+            <span class="text-3xl">🐙</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-base font-bold text-gray-900">플로키</span>
+              <span class="text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full font-medium">인기</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">따뜻하고 다정한 AI 파트너</p>
+            <div class="flex items-center gap-1 mt-1.5">
+              <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">🔊 음성 지원 예정</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- 펭귀니 -->
+        <button onclick="selectCharacter('penguin')" id="char-penguin" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #D1E8FF, #8EC5FC)">
+            <span class="text-3xl">🐧</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-base font-bold text-gray-900">펭귀니</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">차분하고 논리적인 AI 파트너</p>
+            <div class="flex items-center gap-1 mt-1.5">
+              <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">🔊 음성 지원 예정</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- 거북이 -->
+        <button onclick="selectCharacter('turtle')" id="char-turtle" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #D1FFE8, #8EFCB3)">
+            <span class="text-3xl">🐢</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-base font-bold text-gray-900">거북이</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">느긋하고 꼼꼼한 AI 파트너</p>
+            <div class="flex items-center gap-1 mt-1.5">
+              <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">🔊 음성 지원 예정</span>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <button id="onboardNextBtn" onclick="goToStep2()" disabled
+        class="w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        다음
+      </button>
+      <button onclick="skipOnboarding()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+        나중에 설정할게요
+      </button>
+    </div>
+
+    <!-- Step 2: 성격 선택 -->
+    <div id="onboardStep2" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
+      <div class="text-center mb-2">
+        <div class="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4" id="step2CharBg" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+          <span class="text-4xl" id="step2CharEmoji">🐙</span>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900"><span id="step2CharName">플로키</span>의 성격을 골라주세요</h2>
+        <p class="mt-2 text-sm text-gray-500">선택한 성격에 따라 대화 스타일이 달라져요.</p>
+      </div>
+
+      <div class="mt-8 space-y-3" id="personalityList">
+        <!-- 성격 옵션들 (JS에서 렌더링) -->
+      </div>
+
+      <button id="onboardCompleteBtn" onclick="completeOnboarding()" disabled
+        class="w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        시작하기
+      </button>
+      <button onclick="goToStep1()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        캐릭터 다시 선택
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCR-100: AI 비서 — 선제형 메시지 피드 ===== -->
+  <div id="scr-100" class="screen flex-col h-full bg-white">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-2 py-3 border-b border-gray-100 flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <button onclick="assistantHomeBack()" class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="text-base font-bold text-gray-900">AI 비서</span>
+        <!-- 시나리오 시계 -->
+        <span id="scenarioClock" class="hidden ml-1 px-2 py-0.5 rounded-full bg-gray-100 text-[11px] font-mono font-semibold text-gray-500 tracking-wide"></span>
+      </div>
+      <button onclick="showScreen('scr-104')" class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </button>
+    </div>
+
+    <!-- 메시지 리스트 (메신저 스타일) -->
+    <div id="assistantHome" class="flex-1 overflow-y-auto min-h-0">
+      <!-- JS에서 렌더링 -->
+    </div>
+  </div>
+
+  <!-- ===== SCR-110: 채팅방 ===== -->
+  <div id="scr-110" class="screen flex-col h-full bg-white">
+    <!-- Header (메신저 스타일: 아바타 + 이름) -->
+    <div class="flex items-center gap-3 px-2 py-3 border-b border-gray-100 flex-shrink-0">
+      <button onclick="chatDetailBack()" class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" id="chatDetailAvatar">
+        <span class="text-sm" id="chatDetailAvatarEmoji">🐙</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-bold text-gray-900" id="chatDetailTitle">브리핑 리포트</p>
+        <p class="text-[11px] text-gray-400" id="chatDetailSubtitle">AI 비서</p>
+      </div>
+    </div>
+
+    <!-- 채팅 영역 -->
+    <div id="chatDetailArea" class="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3 chat-area">
+      <!-- JS에서 렌더링 -->
+    </div>
+
+    <!-- 채팅 입력 (플로우 검색 모드) -->
+    <div class="px-3 pb-3 pt-2 bg-white flex-shrink-0">
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
+        <div class="px-4 pt-3 pb-2">
+          <input id="chatDetailInput" type="text" placeholder="플로우에 저장된 프로젝트와 데이터를 검색합니다."
+            class="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 border-none outline-none"
+            onkeydown="if(event.key==='Enter')sendChatDetailMessage()">
+        </div>
+        <div class="flex items-center justify-between px-3 pb-3">
+          <div class="flex items-center gap-1">
+            <button onclick="showToast('파일 첨부')" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+              <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
+            </button>
+            <button onclick="showToast('웹 검색 모드')" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+              <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-width="1.5" d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            </button>
+            <div class="flex items-center gap-0.5 px-2 py-1 bg-brand-500 rounded-full">
+              <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <button onclick="showToast('플로우 검색 모드 해제')" class="text-white">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="showToast('플로우 전체에서 검색합니다')" class="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:border-gray-300 transition-colors">
+              플로우 전체 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <button onclick="sendChatDetailMessage()" class="w-9 h-9 flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white rounded-xl transition-colors flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCR-104: 알림 설정 ===== -->
+  <div id="scr-104" class="screen flex-col h-full">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+      <button onclick="showScreen('scr-100')" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <span class="text-base font-bold text-gray-900">알림 설정</span>
+    </div>
+    <div class="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+
+      <!-- 설명 -->
+      <div class="p-4 bg-brand-50/60 rounded-xl">
+        <p class="text-sm text-brand-700 leading-relaxed">AI 비서가 알려줄 항목과 시간을 설정하세요.</p>
+      </div>
+
+      <!-- 1. 오전 브리핑 -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div class="flex items-center justify-between p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center"><span class="text-lg">📋</span></div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">오전 브리핑</p>
+              <p class="text-xs text-gray-400">출근 시 일정·업무·변경사항 요약</p>
+            </div>
+          </div>
+          <button onclick="toggleReminder('briefing', this)" class="reminder-toggle w-11 h-6 rounded-full bg-brand-500 relative transition-colors duration-200 flex-shrink-0" data-on="true">
+            <span class="absolute top-0.5 left-[22px] w-5 h-5 bg-white rounded-full shadow transition-all duration-200"></span>
+          </button>
+        </div>
+        <div class="px-4 pb-4 pt-0" id="briefing-time-section">
+          <div class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span class="text-sm text-gray-600">알림 시각</span>
+            </div>
+            <select onchange="showToast('오전 브리핑 시각이 변경되었어요')" class="text-sm font-medium border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-brand-300">
+              <option value="7:00">07:00</option>
+              <option value="7:30">07:30</option>
+              <option value="8:00" selected>08:00</option>
+              <option value="8:30">08:30</option>
+              <option value="9:00">09:00</option>
+              <option value="9:30">09:30</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 일정 준비 알림 -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div class="flex items-center justify-between p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center"><span class="text-lg">📅</span></div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">일정 준비 알림</p>
+              <p class="text-xs text-gray-400">일정 시작 전 준비 사항 안내</p>
+            </div>
+          </div>
+          <button onclick="toggleReminder('schedules', this)" class="reminder-toggle w-11 h-6 rounded-full bg-brand-500 relative transition-colors duration-200 flex-shrink-0" data-on="true">
+            <span class="absolute top-0.5 left-[22px] w-5 h-5 bg-white rounded-full shadow transition-all duration-200"></span>
+          </button>
+        </div>
+        <div class="px-4 pb-4 pt-0" id="schedules-time-section">
+          <div class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span class="text-sm text-gray-600">사전 알림</span>
+            </div>
+            <select onchange="showToast('일정 사전 알림 시간이 변경되었어요')" class="text-sm font-medium border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-brand-300">
+              <option value="10">10분 전</option>
+              <option value="15">15분 전</option>
+              <option value="30" selected>30분 전</option>
+              <option value="60">1시간 전</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 퇴근 마무리 리포트 -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div class="flex items-center justify-between p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center"><span class="text-lg">📊</span></div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">퇴근 마무리 리포트</p>
+              <p class="text-xs text-gray-400">하루 업무 정리 및 내일 준비</p>
+            </div>
+          </div>
+          <button onclick="toggleReminder('wrapup', this)" class="reminder-toggle w-11 h-6 rounded-full bg-brand-500 relative transition-colors duration-200 flex-shrink-0" data-on="true">
+            <span class="absolute top-0.5 left-[22px] w-5 h-5 bg-white rounded-full shadow transition-all duration-200"></span>
+          </button>
+        </div>
+        <div class="px-4 pb-4 pt-0" id="wrapup-time-section">
+          <div class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span class="text-sm text-gray-600">알림 시각</span>
+            </div>
+            <select onchange="showToast('퇴근 리포트 시각이 변경되었어요')" class="text-sm font-medium border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-brand-300">
+              <option value="17:00">17:00</option>
+              <option value="17:30" selected>17:30</option>
+              <option value="18:00">18:00</option>
+              <option value="18:30">18:30</option>
+              <option value="19:00">19:00</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 방해금지 모드 -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div class="flex items-center justify-between p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center"><span class="text-lg">🔕</span></div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">방해금지 모드</p>
+              <p class="text-xs text-gray-400">모든 AI 비서 알림을 일시 중지</p>
+            </div>
+          </div>
+          <button onclick="toggleReminder('dnd', this)" class="reminder-toggle w-11 h-6 rounded-full bg-gray-300 relative transition-colors duration-200 flex-shrink-0" data-on="false">
+            <span class="absolute top-0.5 left-[2px] w-5 h-5 bg-white rounded-full shadow transition-all duration-200"></span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Character & Personality Data ───────────────────
+const CHARACTERS = {
+  floki:   { name:'플로키',  emoji:'🐙', bg:'linear-gradient(135deg, #FFD1E8, #FFA3C7)', dotBg:'#FFE4F0', desc:'따뜻하고 다정한' },
+  penguin: { name:'펭귀니', emoji:'🐧', bg:'linear-gradient(135deg, #D1E8FF, #8EC5FC)', dotBg:'#E0EEFF', desc:'차분하고 논리적인' },
+  turtle:  { name:'거북이',  emoji:'🐢', bg:'linear-gradient(135deg, #D1FFE8, #8EFCB3)', dotBg:'#E0FFE8', desc:'느긋하고 꼼꼼한' },
+};
+
+const PERSONALITIES = [
+  { id:'smart',      label:'똑똑한',   icon:'🧠', desc:'정확하고 분석적인 답변을 해줘요' },
+  { id:'friendly',   label:'친절한',   icon:'💛', desc:'따뜻하고 배려 있는 답변을 해줘요' },
+  { id:'humorous',   label:'유머러스한', icon:'😄', desc:'재치 있고 유쾌한 답변을 해줘요' },
+  { id:'calm',       label:'차분한',   icon:'🌊', desc:'침착하고 안정적인 답변을 해줘요' },
+  { id:'energetic',  label:'열정적인',  icon:'🔥', desc:'적극적이고 에너지 넘치는 답변을 해줘요' },
+];
+
+// ─── State ────────────────────────────────────────────
+const state = {
+  character: localStorage.getItem('flowai_character') || null,
+  personality: localStorage.getItem('flowai_personality') || null,
+  isCustomized: localStorage.getItem('flowai_customized') === 'true',
+  // 온보딩 임시
+  onboardChar: null,
+  onboardPersonality: null,
+  // 리마인더 설정 (프로토타입용)
+  reminderSettings: {},
+  // 현재 시나리오 ('A' = 푸시 알림, 'B' = 사이드바, null = 기본)
+  currentScenario: null,
+  // 비서 홈
+  currentNotifChat: null,
+  readRooms: [],  // 확인한(읽은) 채팅방 ID 목록
+};
+
+// ─── Dummy Data ───────────────────────────────────────
+const BRIEFING = {
+  schedules: [
+    { id:'sch-001', time:'09:30', title:'주간 팀 스탠드업', location:'화상회의',
+      attendees:['김팀장','이대리','박개발','최디자인','정개발'] },
+    { id:'sch-002', time:'14:00', title:'스프린트 리뷰', location:'본사 3층 회의실',
+      attendees:['김팀장','이대리','박개발','최디자인','정개발','윤기획','한마케터','이부장'] },
+    { id:'sch-003', time:'16:30', title:'1on1 - 김팀장', location:'팀장실',
+      attendees:['김팀장'] },
+  ],
+  tasks: [
+    { id:'task-001', title:'Q2 마케팅 보고서 초안', due:'오늘 마감', priority:'URGENT', path:['FlowAI 마케팅','Q2 캠페인'] },
+    { id:'task-002', title:'PRD 작성', due:'오늘 마감', priority:'HIGH', path:['FlowAI QA 🔧','플로우 AI 별도앱 QA','스마트비서 기획'] },
+    { id:'task-003', title:'디자인 리뷰 피드백', due:'내일 마감', priority:'NORMAL', path:['FlowAI QA 🔧','UI 컴포넌트 검수'] },
+  ],
+  absence: {
+    summary: '자는 동안 꽤 많은 일이 있었네요. 김팀장님이랑 이대리님이 새 업무를 맡겨두셨고, 박개발님 쪽 API 연동이 리뷰 단계로 넘어갔어요. 아, 그리고 팀 채널에서 신주경님 찾는 멘션이 몇 개 와 있더라고요.',
+    items: [
+      { id:'abs-001', type:'new_task', title:'앱 푸시 알림 기획안 작성', from:'김팀장', timeAgo:'6시간 전', path:['FlowAI QA 🔧','플로우 AI 별도앱 QA'] },
+      { id:'abs-002', type:'new_task', title:'경쟁사 벤치마킹 자료 조사', from:'이대리', timeAgo:'5시간 전', path:['FlowAI 마케팅','시장 분석'] },
+      { id:'abs-003', type:'status', title:'API 연동 개발', change:'진행중 → 리뷰 요청', from:'박개발', timeAgo:'4시간 전', path:['FlowAI QA 🔧','백엔드 개발'] },
+      { id:'abs-004', type:'status', title:'디자인 QA 검수', change:'대기 → 진행중', from:'최디자인', timeAgo:'3시간 전', path:['FlowAI QA 🔧','UI 컴포넌트 검수'] },
+      { id:'abs-005', type:'status', title:'서버 배포 스크립트 작성', change:'진행중 → 완료', from:'정개발', timeAgo:'2시간 전', path:['FlowAI QA 🔧','인프라'] },
+      { id:'abs-006', type:'mention', title:'Q2 캠페인 성과 분석', preview:'신주경님 Q2 수치 확인 부탁드려요', from:'한마케터', timeAgo:'5시간 전', path:['FlowAI 마케팅','Q2 캠페인'] },
+      { id:'abs-007', type:'mention', title:'스마트비서 기획 PRD', preview:'PRD 초안 공유해주실 수 있나요?', from:'윤기획', timeAgo:'4시간 전', path:['FlowAI QA 🔧','플로우 AI 별도앱 QA','스마트비서 기획'] },
+      { id:'abs-008', type:'mention', title:'김팀장님과의 채팅', preview:'내일 미팅 자료 전달드립니다', from:'김팀장', timeAgo:'3시간 전', chatRoom:'김팀장' },
+      { id:'abs-009', type:'mention', title:'API 스펙 변경 요청', preview:'API 스펙 변경 건 확인 부탁해요', from:'박개발', timeAgo:'2시간 전', path:['FlowAI QA 🔧','백엔드 개발'] },
+      { id:'abs-010', type:'mention', title:'이번 주 전체회의 안건', preview:'이번 주 전체회의 안건 추가요', from:'이부장', timeAgo:'1시간 전', chatRoom:'FlowAI 전체' },
+    ],
+  },
+  attention: [
+    { id:'att-002', type:'mention', title:'Q2 기획안 리뷰 요청 멘션', author:'이대리', timeAgo:'어제', path:['FlowAI 마케팅','Q2 캠페인'] },
+  ],
+};
+
+const BRIEFING_CTA = {
+  'sch-001': {
+    summary: '주간 팀 스탠드업이 09:30에 있어요. 지난주 액션 아이템 정리가 필요할 수 있어요.',
+    action: { label: '지난주 회의록 분석', icon: '🔍' },
+    link: { label: '바로가기', icon: '📅', target: '캘린더' },
+  },
+  'sch-002': {
+    summary: '스프린트 리뷰가 14:00에 있어요. 이번 스프린트 완료 업무를 미리 정리해드릴까요?',
+    action: { label: '완료 업무 정리', icon: '📊' },
+    link: { label: '바로가기', icon: '📅', target: '캘린더' },
+  },
+  'sch-003': {
+    summary: '김팀장과 1on1이 16:30에 있어요. 지난 1on1에서 논의한 "프로젝트 일정 조정" 건 후속 자료를 준비할까요?',
+    action: { label: '관련 자료 분석', icon: '🔍' },
+    link: { label: '바로가기', icon: '📅', target: '캘린더' },
+  },
+  'task-001': {
+    summary: 'Q2 마케팅 보고서 초안이 오늘 마감이에요. 마케팅팀 채널에 공유된 데이터를 기반으로 초안을 작성해드릴까요?',
+    action: { label: '보고서 초안 작성', icon: '✍️' },
+    link: { label: '바로가기', icon: '📋', target: '업무' },
+  },
+  'task-002': {
+    summary: 'PRD 작성이 오늘 마감이에요. "스마트비서 기획" 관련 기존 문서와 회의록을 분석해서 구조를 잡아드릴까요?',
+    action: { label: '기존 문서 분석', icon: '🔍' },
+    link: { label: '바로가기', icon: '📋', target: '업무' },
+  },
+  'task-003': {
+    summary: '디자인 리뷰 피드백이 내일까지예요. 디자인팀이 공유한 시안을 확인하고 피드백 템플릿을 만들어드릴까요?',
+    action: { label: '피드백 템플릿 생성', icon: '📝' },
+    link: { label: '바로가기', icon: '📋', target: '업무' },
+  },
+  'att-002': {
+    summary: '이대리가 어제 Q2 기획안 리뷰를 요청했어요. 예산 항목이 포함되어 있으니 핵심 내용을 정리해드릴까요?',
+    action: { label: '기획안 핵심 정리', icon: '📊' },
+    link: { label: '바로가기', icon: '💬', target: '게시글' },
+  },
+};
+
+// ─── 리마인더 데이터 (PRD 4-3 기반) ──────────────────
+const REMINDERS = [
+  { id:'rem-001', type:'deadline', label:'📌 마감 당일 업무 알림', title:'Q2 마케팅 보고서 초안', status:'요청', due:'오늘 마감', time:'09:30', path:['FlowAI 마케팅','Q2 캠페인'] },
+  { id:'rem-002', type:'schedule', label:'📅 일정 시작 30분 전', title:'스프린트 리뷰', time:'13:30', location:'본사 3층 회의실', attendees:8 },
+  { id:'rem-003', type:'deadline', label:'📌 마감 D-1 업무 알림', title:'PRD 작성', status:'진행중', due:'내일 마감', time:'14:00', path:['FlowAI QA 🔧','스마트비서 기획'] },
+  { id:'rem-004', type:'noreply', label:'💬 미회신 알림', title:'Q2 기획안 리뷰 요청', from:'이대리', elapsed:'24시간 경과', time:'10:00', path:['FlowAI 마케팅','Q2 캠페인'] },
+];
+
+const PRIORITY_STYLES = {
+  URGENT: { icon:'🚨', bg:'bg-red-50', text:'text-red-600', border:'border-red-200', label:'긴급' },
+  HIGH:   { icon:'🟠', bg:'bg-orange-50', text:'text-orange-600', border:'border-orange-200', label:'높음' },
+  NORMAL: { icon:'🟢', bg:'bg-gray-100', text:'text-gray-600', border:'border-gray-300', label:'보통' },
+  LOW:    { icon:'➖', bg:'bg-blue-50', text:'text-blue-600', border:'border-blue-200', label:'낮음' },
+};
+
+// ─── Helper: UserProfile 컴포넌트 (design-system/common/ui/UserProfile.tsx 기반) ──
+// size: 'xs'|'sm'|'md', compact: bool, showInfo: bool
+function userProfile(name, { size = 'sm', compact = false, showInfo = true } = {}) {
+  const sizes = {
+    xs: { avatar:'w-5 h-5', name:'text-[11px]', fallback:'text-[9px]' },
+    sm: { avatar:'w-6 h-6', name:'text-xs', fallback:'text-[10px]' },
+    md: { avatar:'w-8 h-8', name:'text-sm', fallback:'text-xs' },
+  };
+  const s = sizes[size] || sizes.sm;
+  const initials = name ? name.slice(0, 1) : '?';
+  const infoHtml = showInfo ? `<span class="font-medium text-gray-700 truncate ${s.name}">${name}</span>` : '';
+  return `<div class="flex items-center gap-1.5 min-w-0">
+    <div class="${s.avatar} rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+      <span class="${s.fallback} font-medium text-slate-600">${initials}</span>
+    </div>
+    ${infoHtml}
+  </div>`;
+}
+
+// ─── Helper: 프로젝트 컬러칩 매핑 ──────────────────
+const PROJECT_COLORS = {
+  'FlowAI QA 🔧': '#c084fc',
+  'FlowAI 마케팅': '#f87171',
+  'FlowAI 개발': '#60a5fa',
+  'FlowAI 디자인': '#34d399',
+  'FlowAI 인프라': '#fbbf24',
+};
+function getProjectColor(name) {
+  return PROJECT_COLORS[name] || '#94a3b8';
+}
+
+// ─── Helper: 게시글 경로 브레드크럼 (프로젝트 > 업무 > 하위업무) ──
+function taskBreadcrumb(path) {
+  if (!path || !path.length) return '';
+  const sep = '<svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
+  const chip = `<span class="w-2.5 h-2.5 rounded-sm flex-shrink-0" style="background:${getProjectColor(path[0])}"></span>`;
+  const items = path.map(p => `<span class="truncate">${p}</span>`).join(sep);
+  return `<div class="flex items-center gap-1.5 text-[11px] text-gray-400 min-w-0 overflow-hidden">${chip}${items}</div>`;
+}
+
+// ─── Helper: 아바타 스택 (참석자 겹침 표시) ──────────
+// names: string[], maxShow: 최대 표시 수
+function avatarStack(names, maxShow = 4) {
+  if (!names || !names.length) return '';
+  const colors = ['#94a3b8','#7c9dbd','#8b7eb8','#6d9a8b','#a0846d','#7a8c6e'];
+  const shown = names.slice(0, maxShow);
+  const rest = names.length - maxShow;
+  let html = '<div class="flex items-center -space-x-1.5">';
+  shown.forEach((name, i) => {
+    const bg = colors[i % colors.length];
+    const initial = name.slice(0, 1);
+    html += `<div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0 relative" style="background:${bg};z-index:${maxShow - i}">
+      <span class="text-[9px] font-medium text-white">${initial}</span>
+    </div>`;
+  });
+  if (rest > 0) {
+    html += `<div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0 bg-gray-800 relative" style="z-index:0">
+      <span class="text-[8px] font-bold text-white">+${rest}</span>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// ─── Helper: 캐릭터/성격 정보 가져오기 ──────────────
+function getChar() {
+  return CHARACTERS[state.character] || CHARACTERS.floki;
+}
+function getPersonalityLabel() {
+  const p = PERSONALITIES.find(p => p.id === state.personality);
+  return p ? p.label : '똑똑한';
+}
+
+function getContextualGreeting(c, pLabel) {
+  const hour = new Date().getHours();
+  const name = '신주경';
+
+  // 시간대별 + 상황별 멘트 풀
+  const morningGreetings = [
+    `${name}님, 오늘 서울 날씨는 맑고 18°C예요. 가벼운 겉옷 하나 챙기세요!`,
+    `${name}님, 좋은 아침이에요! 오늘 일정이 꽤 있으니 커피 한 잔 어때요?`,
+    `${name}님, 오늘 하루도 힘내요! 오전에 중요한 미팅이 있어요.`,
+  ];
+  const afternoonGreetings = [
+    `${name}님, 점심은 드셨나요? 오후 일정도 잘 마무리해봐요!`,
+    `${name}님, 오후에도 파이팅! 마감 업무가 있으니 체크해보세요.`,
+    `${name}님, 벌써 오후네요. 남은 업무 함께 정리해볼까요?`,
+  ];
+  const eveningGreetings = [
+    `${name}님, 오늘 하루 수고 많으셨어요! 내일 일정도 미리 확인해볼까요?`,
+    `${name}님, 퇴근 전 마무리할 것들 정리해드릴게요.`,
+    `${name}님, 굿 이브닝! 오늘 처리한 업무를 정리해뒀어요.`,
+  ];
+
+  // 시나리오 시간대 우선, 없으면 실제 시간
+  let pool;
+  const sc = state.currentScenario;
+  if (sc === 'morning') pool = morningGreetings;
+  else if (sc === 'afternoon') pool = afternoonGreetings;
+  else if (sc === 'evening') pool = eveningGreetings;
+  else if (hour < 12) pool = morningGreetings;
+  else if (hour < 18) pool = afternoonGreetings;
+  else pool = eveningGreetings;
+
+  // 날짜 기반 고정 선택 (같은 날엔 같은 멘트)
+  const dayIndex = new Date().getDate() % pool.length;
+  return pool[dayIndex];
+}
+
+// ─── Screen Navigation ────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  if (id === 'scr-100') updateHomeScreen();
+  // scr-104: 리마인더 설정 (정적 HTML, 초기화 불필요)
+}
+
+// ─── Profile Menu (사이드바 프로필 클릭) ──────────────
+function openProfileMenu() {
+  if (!state.isCustomized) {
+    // 첫 진입 → 온보딩
+    showScreen('scr-onboard');
+    resetOnboarding();
+  } else {
+    // 기존 사용자 → 설정
+    showScreen('scr-104');
+  }
+}
+
+// ─── Onboarding ──────────────────────────────────────
+function resetOnboarding() {
+  state.onboardChar = null;
+  state.onboardPersonality = null;
+  document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('onboardNextBtn').disabled = true;
+  document.getElementById('onboardNextBtn').className = 'w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed';
+  goToStep1();
+}
+
+function selectCharacter(charId) {
+  state.onboardChar = charId;
+  document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('char-' + charId).classList.add('selected');
+  const btn = document.getElementById('onboardNextBtn');
+  btn.disabled = false;
+  btn.className = 'w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200';
+}
+
+function goToStep1() {
+  document.getElementById('onboardStep1').style.display = '';
+  document.getElementById('onboardStep2').style.display = 'none';
+  document.getElementById('stepDot1').className = 'w-8 h-1.5 rounded-full bg-brand-500 transition-colors';
+  document.getElementById('stepDot2').className = 'w-8 h-1.5 rounded-full bg-gray-200 transition-colors';
+}
+
+function goToStep2() {
+  if (!state.onboardChar) return;
+  const c = CHARACTERS[state.onboardChar];
+  document.getElementById('step2CharEmoji').textContent = c.emoji;
+  document.getElementById('step2CharBg').style.background = c.bg;
+  document.getElementById('step2CharName').textContent = c.name;
+
+  // 성격 옵션 렌더링
+  renderPersonalityOptions('personalityList', 'onboard');
+
+  document.getElementById('onboardStep1').style.display = 'none';
+  document.getElementById('onboardStep2').style.display = '';
+  document.getElementById('stepDot1').className = 'w-8 h-1.5 rounded-full bg-brand-500 transition-colors';
+  document.getElementById('stepDot2').className = 'w-8 h-1.5 rounded-full bg-brand-500 transition-colors';
+
+  state.onboardPersonality = null;
+  document.getElementById('onboardCompleteBtn').disabled = true;
+  document.getElementById('onboardCompleteBtn').className = 'w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed';
+}
+
+function renderPersonalityOptions(containerId, context) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  PERSONALITIES.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-xl text-left transition-all hover:border-brand-300';
+    btn.onclick = () => selectPersonality(p.id, context, btn);
+    btn.innerHTML = `
+      <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <span class="text-lg">${p.icon}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <span class="text-sm font-bold text-gray-900">${p.label}</span>
+        <p class="text-xs text-gray-500 mt-0.5">${p.desc}</p>
+      </div>`;
+    container.appendChild(btn);
+  });
+}
+
+function selectPersonality(pId, context, btnEl) {
+  const container = btnEl.parentElement;
+  container.querySelectorAll('button').forEach(b => {
+    b.classList.remove('border-brand-500','bg-brand-50');
+    b.classList.add('border-gray-200');
+  });
+  btnEl.classList.remove('border-gray-200');
+  btnEl.classList.add('border-brand-500','bg-brand-50');
+
+  if (context === 'onboard') {
+    state.onboardPersonality = pId;
+    const btn = document.getElementById('onboardCompleteBtn');
+    btn.disabled = false;
+    btn.className = 'w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200';
+  } else {
+    state.settingsPersonality = pId;
+  }
+}
+
+function completeOnboarding() {
+  if (!state.onboardChar || !state.onboardPersonality) return;
+  state.character = state.onboardChar;
+  state.personality = state.onboardPersonality;
+  state.isCustomized = true;
+  localStorage.setItem('flowai_character', state.character);
+  localStorage.setItem('flowai_personality', state.personality);
+  localStorage.setItem('flowai_customized', 'true');
+  showToast(`${getChar().name}와 함께 시작해요!`);
+  showScreen('scr-100');
+}
+
+function skipOnboarding() {
+  // 기본값 설정
+  state.character = 'floki';
+  state.personality = 'smart';
+  state.isCustomized = true;
+  localStorage.setItem('flowai_character', 'floki');
+  localStorage.setItem('flowai_personality', 'smart');
+  localStorage.setItem('flowai_customized', 'true');
+  showToast('플로키가 기본 캐릭터로 설정되었어요');
+  showScreen('scr-100');
+}
+
+// ─── Home Screen ──────────────────────────────────────
+function updateHomeScreen() {
+  const c = getChar();
+  document.getElementById('sidebarCharEmoji').textContent = c.emoji;
+  document.getElementById('sidebarProfileCharEmoji').textContent = c.emoji;
+  document.getElementById('sidebarProfileChar').style.background = c.dotBg;
+
+  // 시나리오 시계 표시
+  const clockEl = document.getElementById('scenarioClock');
+  const sc = state.currentScenario;
+  if (sc && sc !== 'sidebar' && SCENARIO_DATA[sc]) {
+    clockEl.textContent = '🕐 ' + SCENARIO_DATA[sc].displayTime;
+    clockEl.classList.remove('hidden');
+  } else {
+    clockEl.classList.add('hidden');
+  }
+
+  // 비서 홈 렌더링
+  renderAssistantHome();
+}
+
+// ─── AI 비서 홈 (아바타 + 인사말 + 알림 말풍선) ───
+
+function renderAssistantHome() {
+  const home = document.getElementById('assistantHome');
+  const c = getChar();
+  const pLabel = getPersonalityLabel();
+
+  // ── 모든 알림 항목을 자연어 제목으로 생성 ──
+  let allRooms = [];
+
+  // ① 오전 브리핑
+  if (BRIEFING.schedules.length > 0 || BRIEFING.tasks.length > 0 || BRIEFING.absence.items.length > 0) {
+    allRooms.push({
+      id: 'briefing',
+      title: '오전 브리핑',
+      actionPreview: '오늘 일정과 업무 현황을 확인해보세요',
+      donePreview: '궁금한 항목이 있으면 언제든 물어보세요!',
+      time: '오전 8:00',
+      sortMin: 480,
+    });
+  }
+
+  // ② 일정 준비 알림 (개별)
+  BRIEFING.schedules.forEach(s => {
+    const cta = BRIEFING_CTA[s.id];
+    const hourMin = s.time.split(':');
+    const h = parseInt(hourMin[0]);
+    const m = parseInt(hourMin[1]);
+    const eventMin = h * 60 + m;       // 일정 시작 시각
+    const beforeMin = eventMin - 30;   // 알림 시각 (30분 전)
+    const endMin = eventMin + 60;      // 일정 종료 추정 (1시간 후)
+    const beforeH = Math.floor(beforeMin / 60);
+    const beforeM = String(beforeMin % 60).padStart(2, '0');
+    const ampm = beforeH < 12 ? '오전' : '오후';
+    const dispH = beforeH > 12 ? beforeH - 12 : beforeH;
+    const beforeTime = `${ampm} ${dispH}:${beforeM}`;
+    allRooms.push({
+      id: s.id,
+      title: `${s.title} 30분 전이에요`,
+      actionPreview: cta ? cta.action.label + '해 드릴까요?' : '일정을 확인해보세요',
+      donePreview: cta ? cta.summary.split('.')[0] + '.' : '일정을 확인했어요.',
+      time: beforeTime,
+      sortMin: beforeMin,
+      staleMin: eventMin,
+      endMin: endMin,
+      staleTitle: `${s.title}`,
+      stalePreview: null,
+      eventTitle: s.title,
+    });
+  });
+
+  // ③ 퇴근 마무리 리포트
+  allRooms.push({
+    id: 'wrapup',
+    title: '퇴근 마무리 리포트',
+    actionPreview: '오늘 하루 업무 정리를 확인해보세요',
+    donePreview: '내일도 힘내세요! 준비할 것들을 정리해뒀어요.',
+    time: '오후 5:30',
+    sortMin: 1050,
+  });
+
+  // ── 시나리오 시계 기준 필터링 ──
+  const scenario = state.currentScenario;
+  let nowMin = Infinity; // 시나리오 없으면 전부 표시
+  if (scenario && scenario !== 'sidebar' && SCENARIO_DATA[scenario]) {
+    nowMin = SCENARIO_DATA[scenario].sortMin;
+    allRooms = allRooms.filter(r => r.sortMin <= nowMin);
+  }
+
+  // stale 상태 적용 (시간 지남 / 외부 상태 변경)
+  allRooms.forEach(r => {
+    if (r.staleMin && nowMin >= r.staleMin && !state.readRooms.includes(r.id)) {
+      r.isStale = true;
+      // 일정 항목: 진행 중 / 종료됨 동적 판별
+      if (r.endMin) {
+        if (nowMin >= r.endMin) {
+          r.staleTitle = r.staleTitle || r.title;
+          r.stalePreview = '종료된 일정이에요';
+          r.staleIcon = '⏱';
+        } else {
+          r.staleTitle = r.staleTitle || r.title;
+          r.stalePreview = '지금 진행 중인 일정이에요';
+          r.staleIcon = '🔴';
+        }
+      }
+      // 외부 완료 업무: stalePreview 이미 설정됨
+      if (!r.staleIcon) r.staleIcon = '✅';
+    }
+  });
+
+  // 최신순 정렬 (sortMin 내림차순)
+  allRooms.sort((a, b) => b.sortMin - a.sortMin);
+
+  // 2분류: 새 알림(카드) / 지난 대화(해소 + 확인 완료 + 히스토리)
+  const newRooms = [];
+  const pastRooms = [];
+
+  allRooms.forEach(r => {
+    if (state.readRooms.includes(r.id)) {
+      pastRooms.push({ ...r, action: r.donePreview, unread: false });
+    } else if (r.isStale) {
+      pastRooms.push(r); // stale 항목은 지난 대화로
+    } else {
+      newRooms.push({ ...r, action: r.actionPreview, unread: true });
+    }
+  });
+
+  // 고정 히스토리 (과거 날짜)
+  const pastHistory = [
+    { id: 'hist-1', title: '오전 브리핑', action: '모두 처리 완료되었어요!', time: '어제', unread: false },
+    { id: 'hist-2', title: '스프린트 리뷰 준비', action: '이번 스프린트 완료 업무 5건을 정리해서 공유드렸어요.', time: '어제', unread: false },
+    { id: 'hist-3', title: '퇴근 마무리 리포트', action: '내일 준비할 것들을 정리해뒀어요.', time: '4/7', unread: false },
+    { id: 'hist-4', title: '오전 브리핑', action: '이번 주 계획이 잘 진행되고 있어요!', time: '4/7', unread: false },
+  ];
+  const historyRooms = [...pastRooms, ...pastHistory];
+
+  let html = '';
+  let itemIdx = 0;
+
+  // ── 프로필 카드 (상단) + 감성 멘트 ──
+  const greetings = getContextualGreeting(c, pLabel);
+  html += `
+    <div class="px-5 py-5 bg-gradient-to-r from-brand-50/50 to-white">
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center shadow-md flex-shrink-0" style="background:${c.bg}">
+          <span class="text-3xl">${c.emoji}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-base font-bold text-gray-900">당신의 ${pLabel} AI 비서 ${c.name}에요!</p>
+          <p class="text-sm text-gray-500 mt-1">${greetings}</p>
+        </div>
+      </div>
+    </div>`;
+
+  // ── 새 알림 카드 ──
+  if (newRooms.length > 0) {
+    html += `<div class="px-4 pt-4 pb-2 space-y-3">`;
+    newRooms.forEach(room => { html += renderNewCard(room, c, itemIdx++); });
+    html += `</div>`;
+  } else {
+    html += `
+    <div class="flex flex-col items-center justify-center py-10 px-6 text-center">
+      <p class="text-sm text-gray-400">새로운 알림이 없어요</p>
+    </div>`;
+  }
+
+  // ── 지난 대화 섹션 ──
+  html += `<div class="px-5 pt-5 pb-2 border-t border-gray-100"><p class="text-xs font-bold text-gray-400 tracking-wider">지난 대화</p></div>`;
+  historyRooms.forEach(room => {
+    html += room.isStale ? renderStaleListItem(room, itemIdx++) : renderPastListItem(room, itemIdx++);
+  });
+
+  home.innerHTML = html;
+}
+
+// ── 새 알림 카드 렌더링 ──
+function renderNewCard(room, c, index) {
+  return `
+    <button onclick="openNotificationChat('${room.id}')" class="w-full bg-white rounded-2xl border border-brand-100 shadow-sm hover:shadow-md hover:border-brand-200 active:scale-[0.98] transition-all text-left animate-fade-in overflow-hidden" style="animation-delay:${index * 60}ms">
+      <div class="px-4 pt-4 pb-3">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
+            <span class="text-base">${c.emoji}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] text-brand-500 font-semibold">${room.time}</span>
+              <span class="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0"></span>
+            </div>
+            <p class="text-sm font-bold text-gray-900 leading-snug">${room.title}</p>
+            <p class="text-xs text-gray-500 mt-1">${room.action}</p>
+          </div>
+        </div>
+      </div>
+      <div class="px-4 py-2.5 bg-brand-50/50 border-t border-brand-100/50 flex items-center justify-between">
+        <span class="text-[11px] text-brand-600 font-medium">확인하기</span>
+        <svg class="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </button>`;
+}
+
+// ── 지난 대화 리스트 아이템 렌더링 ──
+function renderPastListItem(room, index) {
+  return `
+    <button onclick="openNotificationChat('${room.id}')" class="w-full flex items-center gap-3 px-5 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-b border-gray-50 text-left animate-fade-in" style="animation-delay:${index * 30}ms">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-sm font-medium text-gray-500 truncate pr-2">${room.title}</span>
+          <span class="text-[11px] text-gray-400 flex-shrink-0">${room.time}</span>
+        </div>
+        <p class="text-xs text-gray-400 truncate">${room.action}</p>
+      </div>
+    </button>`;
+}
+
+// ── 해소된 알림 리스트 아이템 (일정 종료, 외부 상태 변경 등) ──
+function renderStaleListItem(room, index) {
+  const icon = room.staleIcon || '✅';
+  const preview = room.stalePreview || '상태가 변경되었어요';
+  const badgeStyle = room.staleIcon === '🔴'
+    ? 'bg-green-50 text-green-600'
+    : room.staleIcon === '⏱'
+      ? 'bg-gray-100 text-gray-500'
+      : 'bg-brand-50 text-brand-600';
+  return `
+    <button onclick="openNotificationChat('${room.id}')" class="w-full flex items-center gap-3 px-5 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-b border-gray-50 text-left animate-fade-in" style="animation-delay:${index * 30}ms">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-sm font-medium text-gray-400 truncate pr-2">${room.title}</span>
+          <span class="text-[11px] text-gray-400 flex-shrink-0">${room.time}</span>
+        </div>
+        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${badgeStyle}">${icon} ${preview}</span>
+      </div>
+    </button>`;
+}
+
+// ── 채팅방 진입 ──
+function openNotificationChat(notifId) {
+  const c = getChar();
+  const area = document.getElementById('chatDetailArea');
+  const titleEl = document.getElementById('chatDetailTitle');
+  const subtitleEl = document.getElementById('chatDetailSubtitle');
+  const avatarEl = document.getElementById('chatDetailAvatar');
+  const emojiEl = document.getElementById('chatDetailAvatarEmoji');
+
+  // 헤더 아바타 설정
+  avatarEl.style.background = c.bg;
+  emojiEl.textContent = c.emoji;
+  subtitleEl.textContent = c.name + ' · AI 비서';
+
+  let chatHtml = '';
+
+  // 각 채팅방의 시나리오 데이터에서 제목 가져오기
+  if (notifId === 'briefing') {
+    titleEl.textContent = SCENARIO_DATA.morning.pushTitle;
+    chatHtml = renderBriefingChat(c);
+  } else if (notifId === 'wrapup') {
+    titleEl.textContent = SCENARIO_DATA.evening.pushTitle;
+    chatHtml = renderWrapUpChat(c);
+  } else if (notifId.startsWith('sch-')) {
+    const schedule = BRIEFING.schedules.find(s => s.id === notifId);
+    if (schedule) {
+      titleEl.textContent = `📅 ${schedule.title} 준비`;
+      chatHtml = renderScheduleItemChat(c, schedule);
+    }
+  } else if (notifId.startsWith('hist-')) {
+    titleEl.textContent = '지난 대화';
+    chatHtml = renderHistoryChat(c, notifId);
+  }
+
+  // 읽음 처리
+  if (!state.readRooms.includes(notifId)) {
+    state.readRooms.push(notifId);
+  }
+
+  area.innerHTML = chatHtml;
+  injectBubbleTimes(area);
+  showScreen('scr-110');
+  setTimeout(() => revealBubblesSequentially(area), 200);
+}
+
+// ── 오전 브리핑 채팅 ──
+function renderBriefingChat(c) {
+  const S = BRIEFING.schedules;
+  const T = BRIEFING.tasks;
+  const abs = BRIEFING.absence;
+  const todayTasks = T.filter(t => t.due.includes('오늘'));
+
+  // ── AI 응답 시작 ──
+  let html = renderAiResponseStart(c);
+
+  // ── 플로우 조회 블록 (AI 응답 내부) ──
+  html += renderFlowQuery('플로우 조회', [
+    { title: '데이터 수집', items: [
+      { icon: '✨', label: '벡터 검색 질의', desc: '오늘 일정, 마감 업무, 밤사이 변화' },
+      { icon: '🔍', label: '키워드 검색' },
+    ], chips: [
+      { label: '📅 캘린더', primary: true },
+      { label: '📋 업무', primary: true },
+      { label: '💬 메시지' },
+      { label: '📆 오늘' },
+    ]},
+    { title: '플로우에서 조회', items: [
+      { type: 'file', label: '캘린더 · 업무 · 메시지', tag: '전체' },
+    ], result: `일정 ${S.length}건 · 마감 업무 ${T.length}건 · 밤사이 변화 ${abs.items.length}건` },
+  ], `${S.length + T.length + abs.items.length}건의 정보를 분석했어요.`, '맞춤 브리핑 생성');
+
+  // 인사
+  html += aiText(`신주경님, 좋은 아침이에요! 오늘 하루를 쭉 살펴봤어요.\n\n---`);
+
+  // ── 일정: 자연어 분석 + 카드 ──
+  if (S.length > 0) {
+    let analysis = `### 📅 오늘 일정 ${S.length}건\n\n`;
+    analysis += `오전에 **${S[0].title}** 끝나고 오후 **${S[1].title}**까지 약 4시간 정도 집중할 수 있는 시간이 있어요.\n\n`;
+    if (S.length >= 3) {
+      analysis += `**${S[2].title}**은 하루 마무리 시점이니까, ${S[1].title} 결과를 정리해서 가져가면 좋을 것 같아요.`;
+    }
+    html += aiText(analysis);
+
+    // 일정 카드 위젯
+    html += aiCard(S.map(s => `
+      <div class="py-2.5 border-b border-gray-100 last:border-0">
+        <div onclick="showToast('캘린더로 이동합니다')" class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
+          <div class="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+            <span class="text-xs font-bold text-brand-500">${s.time}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900">${s.title}</p>
+            <div class="flex items-center gap-2 mt-1">
+              <p class="text-xs text-gray-400">${s.location}</p>
+              <span class="text-gray-300">·</span>
+              ${avatarStack(s.attendees, 4)}
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flex items-center justify-between mt-2 ml-[52px]" id="sch-alarm-${s.id}">
+          <span class="text-[11px] text-brand-500 font-medium">🔔 30분 전 알림 ON</span>
+          <button onclick="event.stopPropagation();toggleScheduleAlarm('${s.id}', this)" class="text-[11px] text-gray-400 hover:text-red-500 transition-colors px-1.5 py-0.5 rounded hover:bg-red-50">해제</button>
+        </div>
+      </div>
+    `).join(''));
+  }
+
+  // ── 마감 업무: 자연어 분석 + 카드 ──
+  if (T.length > 0) {
+    const P = PRIORITY_STYLES;
+    let taskAnalysis = `### 📋 마감 업무 ${T.length}건\n\n`;
+    if (todayTasks.length > 0) {
+      taskAnalysis += `오늘 마감 업무가 ${todayTasks.length}건 있어요.\n\n`;
+      const urgent = todayTasks.find(t => t.priority === 'URGENT');
+      if (urgent) {
+        const urgentCta = BRIEFING_CTA[urgent.id];
+        taskAnalysis += `> 🚨 **"${urgent.title}"**이 긴급이에요.\n\n`;
+        taskAnalysis += urgentCta ? `${urgentCta.summary} ` : '';
+        taskAnalysis += `이걸 오전 집중 시간에 먼저 처리하는 게 좋겠어요.\n\n`;
+      }
+      const high = todayTasks.find(t => t.priority === 'HIGH');
+      if (high) {
+        const highCta = BRIEFING_CTA[high.id];
+        taskAnalysis += `**"${high.title}"**도 오늘까지인데요, `;
+        taskAnalysis += highCta ? highCta.summary : '확인해보세요.';
+        taskAnalysis += '\n\n';
+      }
+    }
+    const laterTasks = T.filter(t => !t.due.includes('오늘'));
+    if (laterTasks.length > 0) {
+      taskAnalysis += `**"${laterTasks[0].title}"**은 ${laterTasks[0].due}이라 여유 있지만, 오늘 틈날 때 미리 봐두면 내일이 편해져요.`;
+    }
+    html += aiText(taskAnalysis);
+
+    // 업무 카드 위젯
+    html += aiCard(T.map(t => {
+      const p = P[t.priority];
+      const dueColor = t.due.includes('오늘') ? 'text-red-600 bg-red-50' : 'text-yellow-600 bg-yellow-50';
+      return `
+      <div onclick="showToast('업무로 이동합니다')" class="py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
+        <div class="flex items-center gap-1.5 mb-1">
+          <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full ${p.bg} ${p.text}">${p.icon} ${p.label}</span>
+          <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full ${dueColor}">${t.due}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900">${t.title}</p>
+            <p class="text-xs text-gray-400 mt-0.5">${t.path.join(' > ')}</p>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0 ml-2">
+            ${userProfile('신주경', { size: 'xs', showInfo: false })}
+            <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+      </div>`;
+    }).join(''));
+  }
+
+  // ── 밤사이 변화: 자연어 분석 ──
+  if (abs.items.length > 0) {
+    const newTasks = abs.items.filter(i => i.type === 'new_task');
+    const mentions = abs.items.filter(i => i.type === 'mention');
+    const statusChanges = abs.items.filter(i => i.type === 'status');
+
+    let absAnalysis = `### 🌙 밤사이 변화\n\n${abs.summary}\n\n`;
+
+    if (newTasks.length > 0) {
+      absAnalysis += `새로 들어온 업무 중에 ${newTasks[0].from}님의 **"${newTasks[0].title}"**은 오늘 마감 업무 끝나고 착수 순서를 잡아드릴까요?\n\n`;
+    }
+    if (mentions.length > 0) {
+      const urgentMention = mentions.find(m => m.preview && m.preview.includes('부탁'));
+      if (urgentMention) {
+        absAnalysis += `${urgentMention.from}님이 "**${urgentMention.preview}**"라고 했는데, 간단히 답변 초안을 작성해드릴 수 있어요.\n\n`;
+      }
+    }
+    const completed = statusChanges.filter(i => i.change && i.change.includes('완료'));
+    if (completed.length > 0) {
+      absAnalysis += `참, ${completed[0].from}님 쪽 **"${completed[0].title}"**은 완료됐으니 리뷰해주시면 돼요!`;
+    }
+
+    html += aiText(absAnalysis);
+
+    // 변화 카드 위젯
+    html += aiCard(`
+      ${abs.items.slice(0, 5).map(item => renderAbsItem(item)).join('')}
+      ${abs.items.length > 5 ? `
+        <div id="abs-more-items" style="display:none;max-height:0;overflow:hidden;transition:max-height 300ms ease">
+          ${abs.items.slice(5).map(item => renderAbsItem(item)).join('')}
+        </div>
+        <p id="abs-more-btn" class="text-xs text-brand-500 font-medium pt-2 cursor-pointer" onclick="toggleAbsMore()">+ ${abs.items.length - 5}건 더 보기</p>
+      ` : ''}
+    `);
+  }
+
+  // ── 추천 액션 ──
+  html += aiText(`---\n\n### 💡 오늘의 추천 순서\n\n정리하면, 이 순서로 움직이면 효율적일 것 같아요:\n\n1. **Q2 마케팅 보고서** 초안 먼저 작성 *오전 집중 시간*\n2. **주간 스탠드업** 참석 *09:30*\n3. 멘션 회신 처리 *스탠드업 후*\n4. **스프린트 리뷰** 참석 *14:00*\n5. **1on1** 준비 + 참석 *16:30*\n\n제가 1번부터 도와드릴까요?`);
+
+  // ── 퀵 액션 ──
+  const qaItems = [];
+  if (todayTasks.find(t => t.priority === 'URGENT')) {
+    const u = todayTasks.find(t => t.priority === 'URGENT');
+    qaItems.push({ label: `"${u.title}" 초안 작성 도와줘`, msg: `${u.title} 초안 작성 도와줘` });
+  }
+  if (S.length > 0) {
+    qaItems.push({ label: `"${S[0].title}" 회의록 미리 분석해줘`, msg: `${S[0].title} 지난 회의록 분석해줘` });
+  }
+  if (abs.items.find(i => i.type === 'mention')) {
+    const m = abs.items.find(i => i.type === 'mention');
+    qaItems.push({ label: `${m.from}님 멘션에 답변 초안 작성`, msg: `${m.from}님 멘션 답변 초안 작성해줘` });
+  }
+  html += renderQuickActions('어떻게 더 도와줄까요?', qaItems);
+
+  // ── AI 응답 끝 ──
+  html += renderAiResponseEnd();
+
+  return html;
+}
+
+// ── 개별 마감 업무 채팅 ──
+function renderTaskItemChat(c, t) {
+  const cta = BRIEFING_CTA[t.id];
+  const P = PRIORITY_STYLES;
+  const p = P[t.priority];
+  let html = renderAiResponseStart(c);
+
+  // 1. 자연어 분석
+  if (t.priority === 'URGENT') {
+    html += aiText(`신주경님, **"${t.title}"** 마감이 ${t.due}이에요! 🚨\n\n> 긴급 업무라서 다른 것보다 먼저 처리하는 게 좋겠어요.\n\n지금 바로 시작하면 오전 중에 끝낼 수 있을 거예요.`);
+  } else if (t.due.includes('오늘')) {
+    html += aiText(`신주경님, **"${t.title}"** 마감이 ${t.due}이에요.\n\n아직 시간 여유가 있으니 오전 집중 시간에 처리하면 충분할 것 같아요.`);
+  } else {
+    html += aiText(`신주경님, **"${t.title}"** 마감이 ${t.due}이에요.\n\n여유가 좀 있지만, 미리 시작해두면 나중에 편할 거예요.`);
+  }
+
+  // 2. 업무 상세 카드
+  const dueColor = t.due.includes('오늘') ? 'text-red-600 bg-red-50' : 'text-yellow-600 bg-yellow-50';
+  html += aiCard(`
+    <div onclick="showToast('업무로 이동합니다')" class="py-1 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full ${p.bg} ${p.text}">${p.icon} ${p.label}</span>
+            <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full ${dueColor}">${t.due}</span>
+          </div>
+          <p class="text-sm font-medium text-gray-900">${t.title}</p>
+          <p class="text-xs text-gray-400 mt-0.5">${t.path.join(' > ')}</p>
+          <div class="flex items-center gap-1.5 mt-2">
+            ${userProfile('신주경', { size: 'xs', showInfo: true })}
+            <span class="text-xs text-gray-400">담당</span>
+          </div>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+  `);
+
+  // 3. AI 제안
+  if (cta) {
+    html += aiText(cta.summary);
+  }
+
+  html += renderAiResponseEnd();
+  return html;
+}
+
+// ── 개별 일정 알림 채팅 ──
+function renderScheduleItemChat(c, s) {
+  const cta = BRIEFING_CTA[s.id];
+
+  // 0. 플로우 조회 블록
+  let html = renderAiResponseStart(c);
+
+  html += renderFlowQuery('플로우 조회', [
+    { title: '일정 확인', items: [
+      { icon: '✨', label: '벡터 검색 질의', desc: `${s.title} 상세 정보` },
+      { icon: '🔍', label: '키워드 검색' },
+    ], chips: [
+      { label: '📅 캘린더', primary: true },
+      { label: `👤 ${s.attendees.length}명 참석` },
+      { label: `📍 ${s.location}` },
+    ]},
+    { title: '관련 데이터 수집', items: [
+      { type: 'file', label: `${s.title} 일정`, tag: '전체' },
+    ], result: `"${s.title}" 상세 정보 조회 완료` },
+  ], '1건의 일정을 분석했어요.', '회의 준비 안내');
+
+  // 1. 자연어 분석
+  const hour = parseInt(s.time.split(':')[0]);
+  let timeContext = '';
+  if (hour < 10) timeContext = '오전 일찍 시작하는 미팅이니 미리 준비해두면 좋겠어요.';
+  else if (hour < 13) timeContext = '오전 중 미팅이에요. 참석 전에 관련 자료를 한번 훑어보세요.';
+  else if (hour < 17) timeContext = '오후 미팅이에요. 점심 후에 여유 있게 준비하면 될 것 같아요.';
+  else timeContext = '늦은 시간 미팅이네요. 간결하게 진행될 수 있도록 안건을 미리 확인해보세요.';
+
+  html += aiText(`신주경님, **${s.time}**에 **"${s.title}"**이 있어요.\n\n📍 ${s.location} · ${s.attendees.length}명 참석\n\n${timeContext}`);
+
+  // 2. 일정 상세 카드
+  html += aiCard(`
+    <div onclick="showToast('캘린더로 이동합니다')" class="py-1 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-600">📅 일정</span>
+            <span class="text-xs text-gray-500">${s.time}</span>
+          </div>
+          <p class="text-sm font-medium text-gray-900">${s.title}</p>
+          <p class="text-xs text-gray-400 mt-0.5">📍 ${s.location}</p>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-xs text-gray-400">참석자</span>
+            ${avatarStack(s.attendees, 4)}
+          </div>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100" id="sch-alarm-detail-${s.id}">
+      <span class="text-[11px] text-brand-500 font-medium">🔔 30분 전 알림 ON</span>
+      <button onclick="event.stopPropagation();toggleScheduleAlarm('${s.id}', this)" class="text-[11px] text-gray-400 hover:text-red-500 transition-colors px-1.5 py-0.5 rounded hover:bg-red-50">해제</button>
+    </div>
+  `);
+
+  // 3. AI 제안
+  if (cta) {
+    html += aiText(cta.summary);
+  }
+
+  // 퀵 액션
+  const schQa = [];
+  if (cta && cta.action) {
+    schQa.push({ label: `"${s.title}" ${cta.action.label}`, msg: `${s.title} ${cta.action.label} 해줘` });
+  }
+  schQa.push({ label: `${s.attendees[0]}님에게 참석 확인 메시지`, toast: `${s.attendees[0]}님에게 메시지를 보냅니다` });
+  schQa.push({ label: `"${s.title}" 관련 자료 찾아줘`, msg: `${s.title} 관련 자료 찾아줘` });
+  html += renderQuickActions('어떻게 더 도와줄까요?', schQa);
+
+  html += renderAiResponseEnd();
+  return html;
+}
+
+// ── 개별 미회신 채팅 ──
+function renderAttentionItemChat(c, a) {
+  const cta = BRIEFING_CTA[a.id];
+  let html = renderAiResponseStart(c);
+
+  // 1. 자연어 분석
+  let urgency = '';
+  if (a.timeAgo.includes('어제')) {
+    urgency = '하루가 지났으니 오늘 중으로 회신하면 좋겠어요.';
+  } else if (a.timeAgo.includes('2일')) {
+    urgency = '이틀째 미회신이에요. 상대방이 기다리고 있을 수 있으니 빨리 확인해보세요!';
+  } else {
+    urgency = '상대방이 기다리고 있을 수 있으니 확인해보시는 게 좋겠어요.';
+  }
+
+  html += aiText(`신주경님, **${a.author}**님이 ${a.timeAgo} **"${a.title}"**을 보냈는데 아직 회신을 못 하셨어요.\n\n${urgency}`);
+
+  // 2. 상세 카드
+  const dest = a.path ? '해당 게시글로 이동합니다' : '채팅으로 이동합니다';
+  html += aiCard(`
+    <div onclick="showToast('${dest}')" class="py-1 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-50 text-orange-600">💬 미회신</span>
+            <span class="text-xs text-gray-500">${a.timeAgo}</span>
+          </div>
+          <p class="text-sm font-medium text-gray-900">${a.title}</p>
+          ${a.path ? '<p class="text-xs text-gray-400 mt-0.5">' + a.path.join(' > ') + '</p>' : ''}
+          <div class="flex items-center gap-1.5 mt-2">
+            ${userProfile(a.author, { size: 'xs', showInfo: true })}
+            <span class="text-xs text-gray-400">보낸 사람</span>
+          </div>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+  `);
+
+  // 3. AI 제안
+  if (cta) {
+    html += aiText(cta.summary);
+  }
+
+  html += renderAiResponseEnd();
+  return html;
+}
+
+// ── 지난 대화 히스토리 채팅 ──
+function renderHistoryChat(c, histId) {
+  let html = renderAiResponseStart(c);
+
+  if (histId === 'hist-1') {
+    html += aiText(`어제의 오전 브리핑이에요. 일정 2건, 마감 업무 1건이 있었어요.`);
+    html += aiCard(`
+      <div class="py-1 space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600">✅ 완료</span>
+          <span class="text-sm text-gray-900">주간 팀 스탠드업 참석</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600">✅ 완료</span>
+          <span class="text-sm text-gray-900">스프린트 리뷰 참석</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600">✅ 완료</span>
+          <span class="text-sm text-gray-900">Q2 마케팅 보고서 초안 제출</span>
+        </div>
+      </div>
+    `);
+    html += aiText(`모두 처리 완료! 어제 하루 수고하셨어요 👏`);
+  } else if (histId === 'hist-2') {
+    html += aiText(`박개발님의 **"API 스펙 변경 요청"**에 대해 회신을 도와드렸어요.`);
+    html += aiCard(`
+      <div class="py-1">
+        <div class="flex items-center gap-1.5 mb-2">
+          <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-600">💬 회신 완료</span>
+        </div>
+        <p class="text-sm text-gray-900">"확인했습니다. 변경 사항 반영하겠습니다."</p>
+        <div class="flex items-center gap-1.5 mt-2">
+          ${userProfile('박개발', { size: 'xs', showInfo: true })}
+          <span class="text-xs text-gray-400">수신</span>
+        </div>
+      </div>
+    `);
+    html += aiText(`회신 후 박개발님이 "감사합니다" 답변을 보내셨어요. 잘 처리되었네요!`);
+  } else if (histId === 'hist-3') {
+    html += aiText(`스프린트 리뷰 준비를 도와드렸어요. 이번 스프린트에서 완료한 업무 5건을 정리했었어요.`);
+    html += aiText(`### 📊 스프린트 완료 업무\n\n1. 로그인 화면 UI 개선\n2. 알림 설정 API 연동\n3. 챗봇 응답 속도 최적화\n4. 사용자 피드백 수집 기능\n5. 대시보드 데이터 시각화`);
+    html += aiText(`리뷰 미팅에서 팀원들 반응이 좋았다고 들었어요. 다음 스프린트도 화이팅! 💪`);
+  } else {
+    html += aiText(`월요일 오전 브리핑이에요. 이번 주 시작과 함께 주간 일정을 정리했었어요.`);
+    html += aiText(`### 📅 이번 주 주요 일정\n\n- **월** — 주간 팀 스탠드업, 1on1\n- **화** — 스프린트 리뷰, 디자인 QA\n- **수** — 전체 회의\n- **목** — 마케팅 워크숍\n- **금** — 회고 미팅`);
+    html += aiText(`이번 주 일정이 잘 진행되고 있어요. 수요일 전체 회의 안건은 미리 정리해둘까요?`);
+  }
+
+  html += renderAiResponseEnd();
+  return html;
+}
+
+// ── 오후 리마인더 채팅 (PM 1:30 — 스프린트 리뷰 30분 전) ──
+function renderReminderChat(c) {
+  const S = BRIEFING.schedules;
+  const review = S.find(s => s.id === 'sch-002');
+  const T = BRIEFING.tasks;
+  let html = renderAiResponseStart(c);
+
+  // 인사 + 리마인더
+  html += aiText('신주경님, **스프린트 리뷰**가 30분 후에 시작돼요!\n\n미리 준비할 수 있도록 정리해드릴게요.');
+
+  // 일정 카드
+  if (review) {
+    html += aiCard(
+      '<div onclick="showToast(\'캘린더로 이동합니다\')" class="py-1 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">' +
+      '<div class="flex items-center gap-1.5 mb-1.5">' +
+        '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-600">📅 일정</span>' +
+        '<span class="text-xs text-gray-500">' + review.time + '</span>' +
+        '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-50 text-red-600">30분 전</span>' +
+      '</div>' +
+      '<p class="text-sm font-medium text-gray-900">' + review.title + '</p>' +
+      '<p class="text-xs text-gray-400 mt-0.5">📍 ' + review.location + '</p>' +
+      '<div class="flex items-center gap-2 mt-2">' +
+        '<span class="text-xs text-gray-400">참석자</span>' +
+        avatarStack(review.attendees, 5) +
+      '</div>' +
+    '</div>');
+  }
+
+  // 이번 스프린트 완료 업무 정리
+  html += aiText('---\n\n### 📊 이번 스프린트 완료 업무\n\n리뷰 때 참고하세요!');
+  html += aiCard(
+    '<div class="py-1 space-y-2">' +
+    '<div class="flex items-center gap-2">' +
+      '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600">✅</span>' +
+      '<span class="text-sm text-gray-900">로그인 화면 UI 개선</span>' +
+    '</div>' +
+    '<div class="flex items-center gap-2">' +
+      '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600">✅</span>' +
+      '<span class="text-sm text-gray-900">알림 설정 API 연동</span>' +
+    '</div>' +
+    '<div class="flex items-center gap-2">' +
+      '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600">✅</span>' +
+      '<span class="text-sm text-gray-900">챗봇 응답 속도 최적화</span>' +
+    '</div>' +
+    '<div class="flex items-center gap-2">' +
+      '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600">✅</span>' +
+      '<span class="text-sm text-gray-900">사용자 피드백 수집 기능</span>' +
+    '</div>' +
+    '<div class="flex items-center gap-2">' +
+      '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-yellow-50 text-yellow-600">🔄 진행중</span>' +
+      '<span class="text-sm text-gray-900">대시보드 데이터 시각화 (80%)</span>' +
+    '</div>' +
+  '</div>');
+
+  // 오늘 마감 업무 리마인더
+  const todayTasks = T.filter(t => t.due.includes('오늘'));
+  if (todayTasks.length > 0) {
+    html += aiText('---\n\n참, 리뷰 끝나고 **오늘 마감 업무**도 잊지 마세요!');
+    let taskCards = '';
+    const P = PRIORITY_STYLES;
+    todayTasks.forEach(function(t) {
+      const p = P[t.priority];
+      taskCards += '<div class="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0">' +
+        '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full ' + p.bg + ' ' + p.text + '">' + p.icon + ' ' + p.label + '</span>' +
+        '<span class="text-sm text-gray-900 flex-1">' + t.title + '</span>' +
+        '<span class="text-[10px] text-red-500 font-bold">오늘</span>' +
+      '</div>';
+    });
+    html += aiCard(taskCards);
+  }
+
+  // 제안
+  html += aiText('\n리뷰 자료가 필요하면 말씀해주세요. 발표용 요약도 만들어드릴 수 있어요!');
+
+  html += renderAiResponseEnd();
+  return html;
+}
+
+// ── 퇴근 전 마무리 채팅 (PM 5:30 — 하루 마무리 리포트) ──
+function renderWrapUpChat(c) {
+  const T = BRIEFING.tasks;
+  const S = BRIEFING.schedules;
+
+  // 플로우 조회 블록
+  let html = renderAiResponseStart(c);
+
+  html += renderFlowQuery('플로우 조회', [
+    { title: '업무 현황 수집', items: [
+      { icon: '✨', label: '벡터 검색 질의', desc: '오늘 하루 업무 현황 종합' },
+      { icon: '🔍', label: '키워드 검색' },
+    ], chips: [
+      { label: '📋 업무', primary: true },
+      { label: '📅 캘린더', primary: true },
+      { label: '💬 메시지' },
+      { label: '📆 오늘' },
+    ]},
+    { title: '하루 데이터 분석', items: [
+      { type: 'file', label: '업무 · 캘린더 · 메시지', tag: '전체' },
+    ], result: `완료 ${3}건 · 미처리 ${2}건 · 내일 일정 ${2}건` },
+  ], '오늘 하루 업무 현황을 정리했어요.', '퇴근 리포트 생성');
+
+  // 인사
+  html += aiText('신주경님, 오늘 하루 수고 많으셨어요! 오늘의 업무 현황을 정리해드릴게요.\n\n---');
+
+  // 오늘 업무 현황
+  html += aiText('### 📊 오늘 업무 현황');
+  html += aiCard(
+    '<div class="py-1">' +
+    '<div class="space-y-2.5">' +
+      '<div class="flex items-start gap-2">' +
+        '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600 mt-0.5">완료</span>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-sm text-gray-900">Q2 마케팅 보고서 초안</p>' +
+          '<p class="text-xs text-gray-400">마케팅팀에 14:30에 제출 완료</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex items-start gap-2">' +
+        '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600 mt-0.5">완료</span>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-sm text-gray-900">PRD 작성</p>' +
+          '<p class="text-xs text-gray-400">스마트비서 기획 PRD 1차 작성 완료</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex items-start gap-2">' +
+        '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600 mt-0.5">완료</span>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-sm text-gray-900">주간 스탠드업 참석</p>' +
+          '<p class="text-xs text-gray-400">09:30 화상회의</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex items-start gap-2">' +
+        '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-yellow-50 text-yellow-600 mt-0.5">미처리</span>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-sm text-gray-900">디자인 리뷰 피드백</p>' +
+          '<p class="text-xs text-gray-400">내일 마감 — 내일 오전에 처리 추천</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex items-start gap-2">' +
+        '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-yellow-50 text-yellow-600 mt-0.5">미처리</span>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-sm text-gray-900">이대리 멘션 회신</p>' +
+          '<p class="text-xs text-gray-400">Q2 기획안 리뷰 요청 — 내일 오전 추천</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>');
+
+  // 오늘 하루 분석
+  html += aiText('---\n\n### 📈 오늘 하루 분석\n\n오늘 **일정 3건** 모두 참석했고, **마감 업무 2건**을 시간 내에 완료했어요. 집중도 높은 하루였어요! 👏');
+
+  // 미회신 알림
+  html += aiText('\n> 아직 **이대리**님의 Q2 기획안 리뷰 요청에 회신을 못 하셨는데, 내일 오전에 처리하시면 어떨까요? 제가 답변 초안을 미리 작성해둘 수 있어요.');
+
+  // 내일 미리보기
+  html += aiText('---\n\n### 📅 내일 일정 미리보기');
+  html += aiCard(
+    '<div class="space-y-2">' +
+      '<div class="flex items-center gap-3 py-1.5">' +
+        '<div class="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">' +
+          '<span class="text-xs font-bold text-brand-500">10:00</span>' +
+        '</div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-sm font-medium text-gray-900">전체 회의</p>' +
+          '<p class="text-xs text-gray-400">본사 대회의실 · 전원 참석</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex items-center gap-3 py-1.5">' +
+        '<div class="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">' +
+          '<span class="text-xs font-bold text-brand-500">15:00</span>' +
+        '</div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-sm font-medium text-gray-900">디자인 QA 리뷰</p>' +
+          '<p class="text-xs text-gray-400">화상회의 · 최디자인, 정개발</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>');
+
+  // 마무리
+  html += aiText('\n내일도 제가 아침에 브리핑 준비해둘게요. 오늘 하루 수고하셨어요, 푹 쉬세요! 😊');
+
+  // 퀵 액션
+  html += renderQuickActions('어떻게 더 도와줄까요?', [
+    { label: '이대리님 Q2 기획안 리뷰 답변 초안 작성', msg: '이대리님 Q2 기획안 리뷰 요청 답변 초안 작성해줘' },
+    { label: '내일 전체 회의 안건 미리 정리해줘', msg: '내일 전체 회의 안건 미리 정리해줘' },
+    { label: '오늘 완료한 업무 요약 메모 작성', msg: '오늘 완료한 업무 요약 메모 작성해줘' },
+  ]);
+
+  html += renderAiResponseEnd();
+  return html;
+}
+
+// ── 플로우 조회 블록 렌더러 ──
+// steps: [{ title, chips:[{label,primary?}], result? }]
+function renderFlowQuery(title, steps, resultText, resultBadge) {
+  const id = 'fq-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+
+  const renderSubItems = (items) => {
+    if (!items) return '';
+    return items.map(item => {
+      if (item.type === 'file') {
+        return `<div class="fq-file">
+          <div class="fq-file-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+          <span>${item.label}</span>
+          ${item.tag ? `<span class="fq-file-tag">${item.tag}</span>` : ''}
+        </div>${item.tokens ? `<div class="fq-token">${item.tokens} tokens</div>` : ''}`;
+      }
+      return `<div class="fq-sub-item">
+        ${item.icon ? `<span class="fq-sub-icon">${item.icon}</span>` : ''}
+        <span class="fq-sub-label">${item.label}</span>
+      </div>${item.desc ? `<div class="fq-sub-item fq-sub-desc">${item.desc}</div>` : ''}`;
+    }).join('');
+  };
+
+  const stepsHtml = steps.map(step => `
+    <div class="flow-query-step">
+      <div class="fq-dot"></div>
+      <div class="fq-content">
+        <div class="fq-step-title">${step.title}</div>
+        ${step.items ? renderSubItems(step.items) : ''}
+        ${step.chips ? `<div class="flex flex-wrap">${step.chips.map(ch =>
+          `<span class="flow-query-chip ${ch.primary ? 'primary' : 'default'}">${ch.label}</span>`
+        ).join('')}</div>` : ''}
+        ${step.result ? `<div class="fq-result">${step.result}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  const resultHtml = resultText ? `
+    <div class="flow-query-step">
+      <div class="fq-dot"></div>
+      <div class="fq-content">
+        <div class="fq-step-title">검색 결과 확인</div>
+        <div class="fq-result">${resultText}</div>
+        ${resultBadge ? `<div class="fq-result-badge">✨ ${resultBadge}</div>` : ''}
+      </div>
+    </div>
+  ` : '';
+
+  return `
+    <div class="flow-query-block">
+      <div class="flow-query-header" onclick="toggleFlowQuery('${id}')">
+        <div class="fq-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></div>
+        <span class="fq-title">${title}</span>
+        <div class="fq-toggle" id="${id}-toggle"><svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg></div>
+      </div>
+      <div class="flow-query-body" id="${id}-body">
+        ${stepsHtml}
+        ${resultHtml}
+      </div>
+    </div>
+  `;
+}
+
+function toggleFlowQuery(id) {
+  const body = document.getElementById(id + '-body');
+  const toggle = document.getElementById(id + '-toggle');
+  if (!body) return;
+  if (body.style.maxHeight === '0px') {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.style.opacity = '1';
+    toggle.style.transform = 'rotate(0deg)';
+  } else {
+    body.style.maxHeight = '0px';
+    body.style.opacity = '0';
+    toggle.style.transform = 'rotate(180deg)';
+  }
+}
+
+// ── 퀵 액션 렌더러 ──
+const _qaRegistry = {};
+function renderQuickActions(title, actions) {
+  const id = 'qa-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  _qaRegistry[id] = actions;
+
+  const items = actions.map((a, i) =>
+    `<button onclick="handleQuickAction('${id}',${i},this)" class="ai-suggest-pill">${a.label}<span class="arrow">›</span></button>`
+  ).join('');
+
+  return `<div id="${id}" class="ai-suggest-section">
+    <div class="ai-suggest-title"><span>⇢</span> ${title}</div>
+    ${items}
+  </div>`;
+}
+
+function handleQuickAction(qaId, idx, btn) {
+  const actions = _qaRegistry[qaId];
+  if (!actions || !actions[idx]) return;
+  const a = actions[idx];
+
+  // 선택한 것 강조, 나머지 비활성화
+  const container = document.getElementById(qaId);
+  if (container) {
+    container.querySelectorAll('button').forEach(b => {
+      b.disabled = true;
+      b.classList.add('disabled');
+    });
+    btn.classList.remove('disabled');
+    btn.classList.add('selected');
+  }
+
+  if (a.msg) {
+    const input = document.getElementById('chatDetailInput');
+    if (input) { input.value = a.msg; }
+    sendChatDetailMessage();
+  } else if (a.toast) {
+    showToast(a.toast);
+  }
+}
+
+// ── marked.js 설정 ──
+if (typeof marked !== 'undefined') {
+  marked.setOptions({ breaks: true, gfm: true });
+}
+
+// 마크다운 파싱 헬퍼: HTML 태그가 포함된 콘텐츠는 그대로, 순수 텍스트는 마크다운 파싱
+function md(text) {
+  if (typeof marked === 'undefined') return text;
+  // 이미 HTML 태그가 들어 있으면 (카드, 뱃지 등) 마크다운 파싱 스킵
+  if (/<div|<span|<button|<svg|<img/.test(text)) return text;
+  try {
+    return typeof marked.parse === 'function' ? marked.parse(text) : marked(text);
+  } catch (e) { return text; }
+}
+
+// ── 공통: AI 말풍선 렌더링 (레거시 — 동적 응답용) ──
+function renderAiBubble(c, content, isFirst = true) {
+  const parsed = md(content);
+  if (isFirst) {
+    return `
+    <div class="chat-bubble flex items-start gap-2.5" style="opacity:0">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
+        <span class="text-sm">${c.emoji}</span>
+      </div>
+      <div class="md-bubble bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-md text-sm text-gray-900 max-w-[85%]">
+        ${parsed}
+      </div>
+    </div>`;
+  } else {
+    return `
+    <div class="chat-bubble flex items-start gap-2.5" style="opacity:0">
+      <div class="w-8 h-8 flex-shrink-0"></div>
+      <div class="md-bubble bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-md text-sm text-gray-900 max-w-[85%]">
+        ${parsed}
+      </div>
+    </div>`;
+  }
+}
+
+// ── AI 응답 렌더링 (마크다운 스타일) ──
+function renderAiResponseStart(c) {
+  const timeStr = getScenarioBubbleTime();
+  return `<div class="chat-bubble ai-response" style="opacity:0">
+    <div class="ai-header flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background:${c.bg}">
+        <span class="text-sm">${c.emoji}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-gray-800">${c.name}</span>
+        <span class="text-xs text-gray-400">${timeStr}</span>
+      </div>
+    </div>
+    <div class="ai-response-body streaming">`;
+}
+
+function renderAiResponseEnd() {
+  return `
+    <div class="ai-feedback">
+      <button onclick="toggleFeedback(this,'up')" title="좋아요"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg></button>
+      <button onclick="toggleFeedback(this,'down')" title="아쉬워요"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 2h3a2 2 0 012 2v7a2 2 0 01-2 2h-3"/></svg></button>
+      <button onclick="copyAiResponse(this)" title="복사"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+      <button onclick="showToast('공유 링크가 복사되었어요')" title="공유"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" points="16,6 12,2 8,6"/><line x1="12" y1="2" x2="12" y2="15" stroke-width="1.5"/></svg></button>
+    </div>
+  </div></div>`;
+}
+
+function toggleFeedback(btn, type) {
+  const feedback = btn.closest('.ai-feedback');
+  feedback.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  showToast(type === 'up' ? '감사합니다! 피드백이 반영됐어요.' : '더 나은 답변을 위해 노력할게요.');
+}
+
+function copyAiResponse(btn) {
+  const body = btn.closest('.ai-response').querySelector('.ai-response-body');
+  if (body) {
+    navigator.clipboard.writeText(body.innerText).then(() => showToast('복사되었어요'));
+  }
+}
+
+// 마크다운 텍스트 블록 (AI 응답 내부용)
+function aiText(content) {
+  return md(content);
+}
+
+// 인터랙티브 카드 위젯 (AI 응답 내부용)
+function aiCard(content) {
+  return `<div class="ai-card-widget">${content}</div>`;
+}
+
+// 시나리오 기반 말풍선 시간 반환
+function getScenarioBubbleTime() {
+  const sc = state.currentScenario;
+  if (sc && sc !== 'sidebar' && SCENARIO_DATA[sc]) {
+    return SCENARIO_DATA[sc].displayTime;
+  }
+  const now = new Date();
+  const h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const ampm = h < 12 ? '오전' : '오후';
+  const dh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+  return `${ampm} ${dh}:${m}`;
+}
+
+// ── 말풍선에 시간 표시 삽입 ──
+function injectBubbleTimes(area) {
+  // AI 응답 스타일에서는 시간이 헤더에 이미 포함되어 있으므로 스킵
+  if (area.querySelector('.ai-response')) return;
+
+  // 레거시 말풍선에만 적용
+  const timeStr = getScenarioBubbleTime();
+  const bubbles = area.querySelectorAll('.chat-bubble');
+  if (bubbles.length === 0) return;
+
+  const lastBubble = bubbles[bubbles.length - 1];
+  const mdEl = lastBubble.querySelector('.md-bubble');
+  if (!mdEl) return;
+
+  const row = document.createElement('div');
+  row.className = 'flex items-end gap-1.5';
+  mdEl.parentElement.insertBefore(row, mdEl);
+  row.appendChild(mdEl);
+  const timeEl = document.createElement('span');
+  timeEl.className = 'text-[10px] text-gray-400 pb-1 flex-shrink-0 whitespace-nowrap';
+  timeEl.textContent = timeStr;
+  row.appendChild(timeEl);
+}
+
+// ── 말풍선 순차 등장 애니메이션 ──
+function revealBubblesSequentially(area) {
+  const bubbles = area.querySelectorAll('.chat-bubble');
+  let delay = 0;
+  bubbles.forEach((bubble, i) => {
+    const isAiResponse = bubble.classList.contains('ai-response');
+    setTimeout(() => {
+      bubble.style.transition = 'opacity 250ms ease, transform 250ms ease';
+      bubble.style.transform = 'translateY(8px)';
+      requestAnimationFrame(() => {
+        bubble.style.opacity = '1';
+        bubble.style.transform = 'translateY(0)';
+        if (isAiResponse) {
+          setTimeout(() => streamAiResponse(bubble, area), 300);
+        } else {
+          setTimeout(() => {
+            bubble.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }, 260);
+        }
+      });
+    }, delay);
+    delay += isAiResponse ? 400 : 400;
+  });
+}
+
+// ── AI 응답 스트리밍 애니메이션 ──
+function streamAiResponse(responseEl, scrollArea) {
+  try {
+    const body = responseEl.querySelector('.ai-response-body');
+    if (!body) return;
+
+    const children = Array.from(body.children);
+    if (children.length === 0) { body.classList.remove('streaming'); return; }
+
+    let idx = 0;
+    const INTERVAL_BASE = 120;
+    const CARD_DELAY = 300;
+
+    function revealNext() {
+      if (idx >= children.length) {
+        body.classList.remove('streaming');
+        return;
+      }
+      const child = children[idx];
+      const isCard = child.classList.contains('ai-card-widget');
+      const isSuggest = child.classList.contains('ai-suggest-section');
+      const isFeedback = child.classList.contains('ai-feedback');
+
+      child.classList.add('streamed');
+
+      requestAnimationFrame(() => {
+        child.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+
+      idx++;
+      const nextDelay = isCard ? CARD_DELAY : isSuggest ? CARD_DELAY : isFeedback ? 200 : INTERVAL_BASE;
+      setTimeout(revealNext, nextDelay);
+    }
+
+    setTimeout(revealNext, 200);
+  } catch (e) {
+    // 에러 시 스트리밍 해제 → 콘텐츠 즉시 표시
+    const body = responseEl.querySelector('.ai-response-body');
+    if (body) body.classList.remove('streaming');
+  }
+}
+
+// ── 채팅 상세 페이지 입력 처리 ──
+function sendChatDetailMessage() {
+  const input = document.getElementById('chatDetailInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const area = document.getElementById('chatDetailArea');
+  const c = getChar();
+  const timeStr = getScenarioBubbleTime();
+
+  // 유저 메시지 (말풍선 유지)
+  const userDiv = document.createElement('div');
+  userDiv.className = 'flex justify-end items-end gap-1.5 animate-fade-in px-5';
+  userDiv.innerHTML = `
+    <span class="text-[10px] text-gray-400 pb-1 flex-shrink-0">${timeStr}</span>
+    <div style="background:#e9e5ff" class="px-4 py-2.5 rounded-2xl rounded-tr-md text-sm text-gray-900 max-w-[80%]">${text}</div>`;
+  area.appendChild(userDiv);
+
+  // AI 응답 (마크다운 스타일)
+  const aiDiv = document.createElement('div');
+  aiDiv.className = 'ai-response animate-fade-in mt-4';
+  aiDiv.innerHTML = `
+    <div class="ai-header flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background:${c.bg}">
+        <span class="text-sm">${c.emoji}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-gray-800">${c.name}</span>
+        <span class="text-xs text-gray-400">${timeStr}</span>
+      </div>
+    </div>
+    <div class="ai-response-body">
+      <span class="dot-typing flex gap-1"><span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span><span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span><span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span></span>
+    </div>`;
+  area.appendChild(aiDiv);
+  area.scrollTop = area.scrollHeight;
+
+  setTimeout(() => {
+    const body = aiDiv.querySelector('.ai-response-body');
+    body.classList.add('streaming');
+    body.innerHTML = md(`네, **"${text}"**에 대해 확인해볼게요.\n\nFlow 데이터를 기반으로 분석 중이에요.`);
+    // 피드백 버튼 추가
+    const feedbackDiv = document.createElement('div');
+    feedbackDiv.className = 'ai-feedback';
+    feedbackDiv.innerHTML = `
+      <button onclick="toggleFeedback(this,'up')" title="좋아요"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg></button>
+      <button onclick="toggleFeedback(this,'down')" title="아쉬워요"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 2h3a2 2 0 012 2v7a2 2 0 01-2 2h-3"/></svg></button>
+      <button onclick="copyAiResponse(this)" title="복사"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+      <button onclick="showToast('공유 링크가 복사되었어요')" title="공유"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" points="16,6 12,2 8,6"/><line x1="12" y1="2" x2="12" y2="15" stroke-width="1.5"/></svg></button>`;
+    body.appendChild(feedbackDiv);
+    // 스트리밍 시작
+    streamAiResponse(aiDiv, area);
+  }, 1500);
+}
+
+function enterAssistant() {
+  if (!state.isCustomized) {
+    showScreen('scr-onboard');
+    resetOnboarding();
+  } else {
+    showScreen('scr-100');
+  }
+}
+
+
+function toggleSnooze(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('hidden');
+}
+
+function snoozeReminder(id, option) {
+  const r = REMINDERS.find(r => r.id === id);
+  if (r) showToast('⏰ "' + r.title + '" ' + option + ' 다시 알림');
+  document.getElementById('snooze-' + id).classList.add('hidden');
+}
+
+function dismissReminder(id) {
+  const idx = REMINDERS.findIndex(r => r.id === id);
+  if (idx !== -1) {
+    const el = document.getElementById('snooze-' + id);
+    if (el) el.closest('.animate-fade-in').remove();
+    showToast('"' + REMINDERS[idx].title + '" 리마인더 해제됨');
+    REMINDERS.splice(idx, 1);
+  }
+}
+
+function completeReminder(id) {
+  const idx = REMINDERS.findIndex(r => r.id === id);
+  if (idx !== -1) {
+    const el = document.getElementById('snooze-' + id);
+    if (el) el.closest('.animate-fade-in').remove();
+    showToast('✅ "' + REMINDERS[idx].title + '" 완료 처리');
+    REMINDERS.splice(idx, 1);
+  }
+}
+
+function handleAction(id, type) {
+  const cta = BRIEFING_CTA[id];
+  if (!cta) return;
+  if (type === 'link') {
+    showComingSoon(cta.link.target + '(으)로 이동');
+  } else {
+    // 채팅 상세 영역에 AI 응답 추가
+    const area = document.getElementById('chatDetailArea');
+    if (area) {
+      const c = getChar();
+      const timeStr = getScenarioBubbleTime();
+      const aiDiv = document.createElement('div');
+      aiDiv.className = 'flex items-start gap-2.5 animate-fade-in';
+      aiDiv.innerHTML = `
+        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
+          <span class="text-sm">${c.emoji}</span>
+        </div>
+        <div class="flex items-end gap-1.5">
+          <div class="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-md text-sm text-gray-900 max-w-[85%]">
+            ${cta.summary}
+          </div>
+          <span class="text-[10px] text-gray-400 pb-1 flex-shrink-0">${timeStr}</span>
+        </div>`;
+      area.appendChild(aiDiv);
+      area.scrollTop = area.scrollHeight;
+    } else {
+      showToast(cta.summary);
+    }
+  }
+}
+
+function startNewChat() {
+  const chatArea = document.getElementById('chatArea');
+  if (chatArea) {
+    chatArea.innerHTML = '';
+    addAIBubble('새로운 대화를 시작할게요. 무엇을 도와드릴까요?');
+  }
+}
+
+// ─── 알림 설정 ────────────────────────────────────────
+function toggleReminder(key, btn) {
+  const isOn = btn.getAttribute('data-on') === 'true';
+  const newState = !isOn;
+  btn.setAttribute('data-on', String(newState));
+  const dot = btn.querySelector('span');
+
+  if (key === 'dnd') {
+    if (newState) {
+      btn.classList.remove('bg-gray-300');
+      btn.classList.add('bg-red-500');
+      dot.style.left = '22px';
+      showToast('🔕 방해금지 모드가 켜졌어요');
+      document.querySelectorAll('.reminder-toggle').forEach(t => {
+        if (t !== btn) {
+          t.style.opacity = '0.4';
+          t.style.pointerEvents = 'none';
+        }
+      });
+    } else {
+      btn.classList.remove('bg-red-500');
+      btn.classList.add('bg-gray-300');
+      dot.style.left = '2px';
+      showToast('알림이 다시 켜졌어요');
+      document.querySelectorAll('.reminder-toggle').forEach(t => {
+        t.style.opacity = '1';
+        t.style.pointerEvents = 'auto';
+      });
+    }
+  } else {
+    if (newState) {
+      btn.classList.remove('bg-gray-300');
+      btn.classList.add('bg-brand-500');
+      dot.style.left = '22px';
+    } else {
+      btn.classList.remove('bg-brand-500');
+      btn.classList.add('bg-gray-300');
+      dot.style.left = '2px';
+    }
+    // 시간 설정 영역 표시/숨김
+    const timeSection = document.getElementById(key + '-time-section');
+    if (timeSection) {
+      timeSection.style.display = newState ? '' : 'none';
+      timeSection.style.opacity = newState ? '1' : '0';
+    }
+    localStorage.setItem('flowai_reminder_' + key, String(newState));
+    const labels = {briefing:'오전 브리핑',schedules:'일정 준비',wrapup:'퇴근 리포트'};
+    showToast((newState ? '🔔 ' : '🔕 ') + (labels[key] || key) + ' 알림 ' + (newState ? 'ON' : 'OFF'));
+  }
+}
+
+// ─── 일정 알림 인라인 토글 (채팅 내) ──────────────────
+function toggleScheduleAlarm(schId, btn) {
+  const container = btn.closest('[id^="sch-alarm"]');
+  if (!container) return;
+  const label = container.querySelector('span');
+  const isOn = label.textContent.includes('ON');
+
+  if (isOn) {
+    // OFF로 전환
+    label.textContent = '🔕 알림 해제됨';
+    label.className = 'text-[11px] text-gray-400 font-medium';
+    btn.textContent = '다시 켜기';
+    btn.className = 'text-[11px] text-brand-500 hover:text-brand-600 transition-colors px-1.5 py-0.5 rounded hover:bg-brand-50';
+    const schedule = BRIEFING.schedules.find(s => s.id === schId);
+    const title = schedule ? schedule.title : '일정';
+    showToast(`🔕 "${title}" 알림을 해제했어요`);
+  } else {
+    // ON으로 복원
+    label.textContent = '🔔 30분 전 알림 ON';
+    label.className = 'text-[11px] text-brand-500 font-medium';
+    btn.textContent = '해제';
+    btn.className = 'text-[11px] text-gray-400 hover:text-red-500 transition-colors px-1.5 py-0.5 rounded hover:bg-red-50';
+    const schedule = BRIEFING.schedules.find(s => s.id === schId);
+    const title = schedule ? schedule.title : '일정';
+    showToast(`🔔 "${title}" 알림을 다시 켰어요`);
+  }
+
+  // 같은 schId를 가진 다른 화면의 알림 상태도 동기화
+  document.querySelectorAll(`[id$="-${schId}"]`).forEach(el => {
+    if (el === container) return;
+    if (!el.id.startsWith('sch-alarm')) return;
+    const otherLabel = el.querySelector('span');
+    const otherBtn = el.querySelector('button');
+    if (otherLabel) {
+      otherLabel.textContent = label.textContent;
+      otherLabel.className = label.className;
+    }
+    if (otherBtn) {
+      otherBtn.textContent = btn.textContent;
+      otherBtn.className = btn.className;
+    }
+  });
+}
+
+// ─── Toast ───────────────────────────────────────────
+function showComingSoon(name) {
+  showToast(`${name} 기능은 준비 중이에요`);
+}
+
+function toggleAbsMore() {
+  const items = document.getElementById('abs-more-items');
+  const btn = document.getElementById('abs-more-btn');
+  if (!items || !btn) return;
+  const isHidden = items.style.display === 'none';
+  if (isHidden) {
+    items.style.display = 'block';
+    requestAnimationFrame(() => { items.style.maxHeight = items.scrollHeight + 'px'; });
+    btn.textContent = '접기';
+  } else {
+    items.style.maxHeight = '0';
+    setTimeout(() => { items.style.display = 'none'; }, 300);
+    btn.textContent = '+ ' + items.children.length + '건 더 보기';
+  }
+  // 스크롤 조정
+  setTimeout(() => {
+    const area = document.getElementById('notif-chat-area');
+    if (area) area.scrollTop = area.scrollHeight;
+  }, 320);
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.remove('opacity-0','pointer-events-none');
+  toast.classList.add('opacity-100');
+  setTimeout(() => {
+    toast.classList.remove('opacity-100');
+    toast.classList.add('opacity-0','pointer-events-none');
+  }, 2000);
+}
+
+// ─── Sidebar ─────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isOpen = sidebar.style.transform === 'translateX(0px)' || sidebar.style.transform === 'translateX(0)';
+  if (isOpen) {
+    sidebar.style.transform = 'translateX(-100%)';
+    overlay.classList.remove('opacity-100','pointer-events-auto');
+    overlay.classList.add('opacity-0','pointer-events-none');
+  } else {
+    sidebar.style.transform = 'translateX(0)';
+    overlay.classList.remove('opacity-0','pointer-events-none');
+    overlay.classList.add('opacity-100','pointer-events-auto');
+  }
+}
+
+function toggleRecentChats() {
+  const list = document.getElementById('recentChatList');
+  const chevron = document.getElementById('recentChevron');
+  if (list.style.display === 'none') {
+    list.style.display = 'block';
+    chevron.style.transform = 'rotate(0deg)';
+  } else {
+    list.style.display = 'none';
+    chevron.style.transform = 'rotate(-90deg)';
+  }
+}
+
+// ─── Absence Item Renderer ───────────────────────────
+function renderAbsItem(item) {
+  const typeLabel = item.type === 'new_task' ? '새 업무' : item.type === 'status' ? '상태 변경' : '멘션';
+  const typeBg = item.type === 'new_task' ? 'bg-blue-50 text-blue-600' : item.type === 'status' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600';
+  const dest = item.type === 'mention' && item.chatRoom ? '채팅으로 이동합니다' : '업무로 이동합니다';
+  let detail = '';
+  if (item.type === 'status' && item.change) {
+    detail = '<p class="text-xs text-gray-500 mt-0.5">' + item.change + '</p>';
+  } else if (item.type === 'mention' && item.preview) {
+    detail = '<p class="text-xs text-gray-500 mt-0.5 truncate">&ldquo;' + item.preview + '&rdquo;</p>';
+  } else if (item.type === 'new_task' && item.path) {
+    detail = '<p class="text-xs text-gray-400 mt-0.5 truncate">' + item.path.join(' &gt; ') + '</p>';
+  }
+  return '<div onclick="showToast(\'' + dest + '\')" class="flex items-center gap-2.5 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">'
+    + '<div class="flex-1 min-w-0">'
+    + '<div class="flex items-center gap-1.5">'
+    + '<span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full ' + typeBg + ' flex-shrink-0">' + typeLabel + '</span>'
+    + '<p class="text-sm text-gray-900 truncate">' + item.title + '</p>'
+    + '</div>'
+    + detail
+    + '<div class="flex items-center gap-1.5 mt-1">'
+    + userProfile(item.from, { size: 'xs', showInfo: true })
+    + '<span class="text-xs text-gray-400 flex-shrink-0">' + item.timeAgo + '</span>'
+    + '</div>'
+    + '</div>'
+    + '<svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'
+    + '</div>';
+}
+
+// ─── Main Screen ─────────────────────────────────────
+function sendMainMessage() {
+  const input = document.getElementById('mainChatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  showComingSoon('일반 AI 대화');
+}
+
+// ─── Briefing (통합 채팅에서 사용) ──────────────────────
+
+function sectionHeader(icon, title, sectionId) {
+  return `<div id="section-${sectionId}" class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
+      <span class="text-sm font-medium text-gray-500">${icon} ${title}</span>
+    </div>`;
+}
+
+function addAIBubble(text) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'animate-fade-in';
+  div.innerHTML = `<div class="text-sm text-gray-900 leading-relaxed">${text}</div>`;
+  area.appendChild(div);
+}
+
+function addAICard(cardHtml) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'animate-fade-in';
+  div.innerHTML = `<div class="w-full">${cardHtml}</div>`;
+  area.appendChild(div);
+}
+
+function addUserBubble(text) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'flex justify-end animate-fade-in';
+  div.innerHTML = `<div style="background:#e9e5ff" class="px-3 py-2 rounded-lg text-sm text-gray-900 max-w-[80%]">${text}</div>`;
+  area.appendChild(div);
+}
+
+function addTypingIndicator() {
+  const area = document.getElementById('chatArea');
+  const c = getChar();
+  const div = document.createElement('div');
+  div.className = 'flex items-start gap-2 animate-fade-in';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
+      <span class="text-xs">${c.emoji}</span>
+    </div>
+    <div class="bg-gray-50 px-3 py-2 rounded-lg dot-typing flex gap-1">
+      <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+      <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+      <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+    </div>`;
+  area.appendChild(div);
+  scrollToBottom();
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+// ─── Interactions ────────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  addUserBubble(text);
+  scrollToBottom();
+  addTypingIndicator();
+
+  setTimeout(() => {
+    removeTypingIndicator();
+    addAIBubble(`네, 확인해볼게요! "${text}"에 대해 Flow 데이터를 기반으로 분석 중이에요.`);
+    scrollToBottom();
+  }, 1500);
+}
+
+function scrollToBottom() {
+  const area = document.getElementById('chatArea');
+  requestAnimationFrame(() => { area.scrollTop = area.scrollHeight; });
+}
+
+// ─── Scenario Data ───────────────────────────────────
+const SCENARIO_DATA = {
+  morning: {
+    label: '오전 출근',
+    time: '8:50', clock: '8:50', displayTime: 'AM 9:05',
+    sortMin: 545,
+    pushTitle: '좋은 아침이에요! 오전 브리핑 도착 📋',
+    pushSub: '오늘 일정 3건, 마감 업무 2건, 밤사이 변경 10건을 정리했어요.',
+    chatTarget: 'briefing',
+    phoneBg: 'linear-gradient(180deg,#0c1445 0%,#1a2a6c 40%,#2d4a7a 100%)',
+  },
+  afternoon: {
+    label: '일정 준비 알림',
+    time: '13:30', clock: '1:30', displayTime: 'PM 1:30',
+    sortMin: 810,
+    pushTitle: '📅 스프린트 리뷰 30분 전이에요',
+    pushSub: '14:00 본사 3층 회의실, 8명 참석. 회의 준비 사항을 정리해드릴까요?',
+    chatTarget: 'sch-002',
+    phoneBg: 'linear-gradient(180deg,#1a1a2e 0%,#16213e 40%,#0f3460 100%)',
+  },
+  evening: {
+    label: '퇴근 전',
+    time: '17:30', clock: '5:30', displayTime: 'PM 5:30',
+    sortMin: 1050,
+    pushTitle: '오늘 하루 수고했어요! 마무리 리포트 📊',
+    pushSub: '완료 3건, 미처리 2건 정리했어요. 내일 준비도 도와드릴게요.',
+    chatTarget: 'wrapup',
+    phoneBg: 'linear-gradient(180deg,#2d1b69 0%,#4a2072 30%,#7b3f8f 60%,#c06c84 85%,#f67280 100%)',
+  },
+};
+
+// ─── Scenario Navigation ────────────────────────────
+function ensureOnboarded() {
+  if (!state.isCustomized) {
+    state.character = 'floki';
+    state.personality = 'smart';
+    state.isCustomized = true;
+    localStorage.setItem('flowai_character', 'floki');
+    localStorage.setItem('flowai_personality', 'smart');
+    localStorage.setItem('flowai_customized', 'true');
+  }
+}
+
+function startScenario(type) {
+  state.currentScenario = type;
+  state.readRooms = []; // 시나리오 전환 시 읽음 상태 초기화
+  ensureOnboarded();
+
+  // 사이드바 진입
+  if (type === 'sidebar') {
+    showScreen('scr-000');
+    setTimeout(() => {
+      toggleSidebar();
+      const aiBtn = document.querySelector('#sidebar button[onclick*="enterAssistant"]');
+      if (aiBtn) {
+        aiBtn.classList.add('ring-2','ring-brand-300','ring-offset-2');
+        setTimeout(() => { aiBtn.classList.remove('ring-2','ring-brand-300','ring-offset-2'); }, 3000);
+      }
+    }, 800);
+    return;
+  }
+
+  // 푸시 알림 시나리오 (morning / afternoon / evening)
+  const sd = SCENARIO_DATA[type];
+  if (!sd) return;
+
+  // 날짜 계산
+  const now = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  const dateStr = (now.getMonth()+1) + '월 ' + now.getDate() + '일 ' + days[now.getDay()] + '요일';
+
+  // 폰 화면 세팅
+  document.getElementById('phoneClock').textContent = sd.clock;
+  document.getElementById('phoneTime').textContent = sd.time;
+  document.getElementById('phoneDate').textContent = dateStr;
+  document.getElementById('scr-phone').style.background = sd.phoneBg;
+
+  // 푸시 알림 내용 업데이트
+  const c = getChar();
+  document.getElementById('phonePushEmoji').textContent = c.emoji;
+  document.getElementById('phonePushTitle').textContent = sd.pushTitle;
+  document.getElementById('phonePushSub').textContent = sd.pushSub;
+
+  // 푸시 초기 상태로 리셋
+  const push = document.getElementById('phonePush');
+  push.classList.add('opacity-0','pointer-events-none');
+  push.classList.remove('opacity-100','pointer-events-auto');
+  push.style.transform = 'translateY(-100%)';
+
+  showScreen('scr-phone');
+
+  // 1.5초 후 푸시 슬라이드 인
+  setTimeout(() => {
+    push.classList.remove('opacity-0','pointer-events-none');
+    push.classList.add('opacity-100','pointer-events-auto');
+    push.style.transform = 'translateY(0)';
+  }, 1500);
+}
+
+function phonePushTap() {
+  const push = document.getElementById('phonePush');
+  push.style.transform = 'scale(0.95)';
+  push.style.opacity = '0.5';
+
+  const sd = SCENARIO_DATA[state.currentScenario];
+  setTimeout(() => {
+    push.classList.add('opacity-0','pointer-events-none');
+    push.style.transform = 'translateY(-100%)';
+    openNotificationChat(sd ? sd.chatTarget : 'briefing');
+  }, 300);
+}
+
+function assistantHomeBack() {
+  if (state.currentScenario === 'sidebar') {
+    showScreen('scr-000');
+  } else {
+    showScreen('scr-scenario');
+  }
+}
+
+function chatDetailBack() {
+  showScreen('scr-100');
+}
+
+function resetAllState() {
+  localStorage.removeItem('flowai_character');
+  localStorage.removeItem('flowai_personality');
+  localStorage.removeItem('flowai_customized');
+  state.character = null;
+  state.personality = null;
+  state.isCustomized = false;
+  state.readRooms = [];
+  showToast('초기화 완료 — 온보딩부터 다시 시작됩니다');
+}
+
+// ─── Init ────────────────────────────────────────────
+// 시나리오 선택 화면이 기본이므로 푸시는 비활성화
+// showPushNotification();
+</script>
+
+</body>
+</html>

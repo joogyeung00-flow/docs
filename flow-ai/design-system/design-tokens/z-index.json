@@ -1,0 +1,32 @@
+{
+  "$schema": "Flow AI Design System — Z-index Tokens v1",
+  "$source": "Flow AI Design System",
+
+  "zIndex": {
+    "hide":     -1,
+    "base":      0,
+    "raised":    1,
+    "dropdown": 10,
+    "sticky":   20,
+    "overlay":  30,
+    "modal":    40,
+    "popover":  50,
+    "toast":    60,
+    "tooltip":  70,
+    "max":    9999
+  },
+
+  "$usage": {
+    "hide":     "화면에서 숨겨야 하는 요소",
+    "base":     "기본 레이어 (일반 콘텐츠)",
+    "raised":   "카드, 버튼 등 약간 올라온 요소",
+    "dropdown": "드롭다운 메뉴, 셀렉트 옵션",
+    "sticky":   "sticky 헤더, 사이드바 고정 요소",
+    "overlay":  "모달 뒷배경(dim), 드로어 오버레이",
+    "modal":    "모달 다이얼로그, 바텀시트",
+    "popover":  "팝오버, 컨텍스트 메뉴",
+    "toast":    "토스트 알림 (sonner)",
+    "tooltip":  "툴팁 (항상 최상위)",
+    "max":      "예외적으로 모든 것 위에 올려야 할 때"
+  }
+}

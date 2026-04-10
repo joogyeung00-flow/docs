@@ -1,0 +1,65 @@
+{
+  "$schema": "Flow AI Design System — Border Tokens v1",
+  "$source": "Flow AI Design System",
+
+  "borderWidth": {
+    "0":       "0px",
+    "DEFAULT": "1px",
+    "2":       "2px",
+    "4":       "4px",
+    "8":       "8px"
+  },
+
+  "borderStyle": {
+    "solid":  "solid",
+    "dashed": "dashed",
+    "dotted": "dotted",
+    "none":   "none"
+  },
+
+  "opacity": {
+    "0":    0,
+    "5":    0.05,
+    "10":   0.1,
+    "15":   0.15,
+    "20":   0.2,
+    "25":   0.25,
+    "30":   0.3,
+    "40":   0.4,
+    "50":   0.5,
+    "60":   0.6,
+    "70":   0.7,
+    "75":   0.75,
+    "80":   0.8,
+    "90":   0.9,
+    "95":   0.95,
+    "100":  1
+  },
+
+  "$opacityUsage": {
+    "disabled":     0.4,
+    "placeholder":  0.5,
+    "overlay-dim":  0.5,
+    "muted-text":   0.7,
+    "hover-icon":   0.8,
+    "subtle":       0.9
+  },
+
+  "screens": {
+    "xs":  "480px",
+    "sm":  "640px",
+    "md":  "768px",
+    "lg":  "1024px",
+    "xl":  "1280px",
+    "2xl": "1536px"
+  },
+
+  "$screensUsage": {
+    "xs":  "모바일 소형 (Galaxy S 시리즈 등)",
+    "sm":  "모바일 대형 / 가로모드",
+    "md":  "태블릿",
+    "lg":  "노트북 / 소형 데스크톱",
+    "xl":  "데스크톱",
+    "2xl": "대형 모니터"
+  }
+}
