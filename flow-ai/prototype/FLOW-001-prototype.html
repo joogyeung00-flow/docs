@@ -302,8 +302,8 @@ tailwind.config = {
     <!-- 푸시 알림 (시뮬레이션 — 위에서 슬라이드 인) -->
     <div id="phonePush" class="absolute top-10 left-3 right-3 z-30 opacity-0 pointer-events-none" style="transform:translateY(-100%);transition:all 400ms cubic-bezier(0.34,1.56,0.64,1)">
       <div onclick="phonePushTap()" class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-4 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform" style="border:1px solid rgba(255,255,255,0.3)">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
-          <span class="text-lg" id="phonePushEmoji">✨</span>
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <span class="text-lg w-full h-full" id="phonePushEmoji"><img src="floki.png" alt="플로키" class="w-full h-full object-cover rounded-xl"></span>
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between">
@@ -419,7 +419,7 @@ tailwind.config = {
           </div>
         </div>
       </div>
-      <p class="mt-2 text-[11px] text-gray-400 text-center leading-relaxed">플로우 AI의 대화는 LLM에 학습·기록되지 않으며, 프롬프트 가드로 안전하게 처리됩니다.</p>
+      <p class="mt-2 text-[11px] text-gray-400 text-center leading-relaxed hidden">플로우 AI의 대화는 LLM에 학습·기록되지 않으며, 프롬프트 가드로 안전하게 처리됩니다.</p>
     </div>
 
   </div>
@@ -458,8 +458,8 @@ tailwind.config = {
       <!-- AI 비서 (핵심 메뉴) -->
       <button onclick="toggleSidebar();enterAssistant()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-brand-50 transition-colors text-left group">
         <div class="flex items-center gap-3">
-          <div class="w-5 h-5 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
-            <span class="text-[10px]" id="sidebarCharEmoji">🐙</span>
+          <div class="w-5 h-5 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <span class="text-[10px] w-full h-full" id="sidebarCharEmoji"><img src="floki.png" alt="플로키" class="w-full h-full rounded-full object-cover"></span>
           </div>
           <span class="text-sm text-gray-700 font-medium">AI 비서</span>
         </div>
@@ -503,8 +503,8 @@ tailwind.config = {
           <p class="text-xs text-gray-400">PM3팀</p>
         </div>
         <!-- 캐릭터 미니 아이콘 -->
-        <div id="sidebarProfileChar" class="w-6 h-6 rounded-full flex items-center justify-center" style="background:#FFE4F0">
-          <span class="text-xs" id="sidebarProfileCharEmoji">🐙</span>
+        <div id="sidebarProfileChar" class="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden" style="background:#FFE4F0">
+          <span class="text-xs w-full h-full" id="sidebarProfileCharEmoji"><img src="floki.png" alt="플로키" class="w-full h-full rounded-full object-cover"></span>
         </div>
       </button>
     </div>
@@ -524,6 +524,9 @@ tailwind.config = {
     <div class="flex items-center justify-center gap-2 pt-6 pb-2">
       <div id="stepDot1" class="w-8 h-1.5 rounded-full bg-brand-500 transition-colors"></div>
       <div id="stepDot2" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
+      <div id="stepDot3" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
+      <div id="stepDot4" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
+      <div id="stepDot5" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
     </div>
 
     <!-- Step 1: 캐릭터 선택 -->
@@ -536,8 +539,8 @@ tailwind.config = {
       <div class="mt-8 space-y-4">
         <!-- 플로키 -->
         <button onclick="selectCharacter('floki')" id="char-floki" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
-          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
-            <span class="text-3xl">🐙</span>
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+            <img src="floki.png" alt="플로키" class="w-full h-full object-cover rounded-2xl">
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
@@ -587,8 +590,8 @@ tailwind.config = {
     <!-- Step 2: 성격 선택 -->
     <div id="onboardStep2" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
       <div class="text-center mb-2">
-        <div class="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4" id="step2CharBg" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
-          <span class="text-4xl" id="step2CharEmoji">🐙</span>
+        <div class="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4 overflow-hidden" id="step2CharBg" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+          <span class="text-4xl w-full h-full" id="step2CharEmoji"><img src="floki.png" alt="플로키" class="w-full h-full rounded-full object-cover"></span>
         </div>
         <h2 class="text-2xl font-bold text-gray-900"><span id="step2CharName">플로키</span>의 성격을 골라주세요</h2>
         <p class="mt-2 text-sm text-gray-500">선택한 성격에 따라 대화 스타일이 달라져요.</p>
@@ -598,13 +601,151 @@ tailwind.config = {
         <!-- 성격 옵션들 (JS에서 렌더링) -->
       </div>
 
-      <button id="onboardCompleteBtn" onclick="completeOnboarding()" disabled
+      <button id="onboardCompleteBtn" onclick="goToStep3()" disabled
         class="w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
-        시작하기
+        다음
       </button>
       <button onclick="goToStep1()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         캐릭터 다시 선택
+      </button>
+    </div>
+
+    <!-- Step 3: 오전 브리핑 알림 설정 -->
+    <div id="onboardStep3" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-amber-50 mx-auto flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900">오전 브리핑</h2>
+        <p class="mt-2 text-sm text-gray-500 leading-relaxed">매일 아침, 오늘 일정과 해야 하는 업무,<br>확인해야 할 사항을 정리해서 알려드릴까요?</p>
+      </div>
+
+      <!-- 토글 -->
+      <div class="bg-gray-50 rounded-2xl p-5">
+        <div class="flex items-center justify-between">
+          <span class="text-[14px] font-medium text-gray-900">알림 받기</span>
+          <button id="ob-briefing-toggle" onclick="toggleOnboardReminder('briefing', this)" class="w-11 h-6 rounded-full bg-brand-500 relative transition-colors duration-200 flex-shrink-0" data-on="true">
+            <span class="absolute top-0.5 left-[22px] w-5 h-5 bg-white rounded-full shadow transition-all duration-200"></span>
+          </button>
+        </div>
+        <div id="ob-briefing-options" class="mt-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span class="text-[13px] text-gray-600">알림 시각</span>
+            </div>
+            <select id="ob-briefing-time" class="text-[13px] font-medium border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-brand-300">
+              <option value="7:00">07:00</option>
+              <option value="7:30">07:30</option>
+              <option value="8:00" selected>08:00</option>
+              <option value="8:30">08:30</option>
+              <option value="9:00">09:00</option>
+              <option value="9:30">09:30</option>
+            </select>
+          </div>
+          <p class="text-[11px] text-gray-400 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            설정 시각 30분 전부터 일정·업무·변경사항을 수집해요
+          </p>
+        </div>
+      </div>
+
+      <button onclick="goToStep4()"
+        class="w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200">
+        다음
+      </button>
+      <button onclick="goToStep2()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        이전
+      </button>
+    </div>
+
+    <!-- Step 4: 일정 준비 알림 설정 -->
+    <div id="onboardStep4" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-blue-50 mx-auto flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900">일정 준비 알림</h2>
+        <p class="mt-2 text-sm text-gray-500 leading-relaxed">회의나 미팅이 시작되기 전에<br>참석자, 안건, 관련 자료를 미리 챙겨드릴까요?</p>
+      </div>
+
+      <!-- 토글 -->
+      <div class="bg-gray-50 rounded-2xl p-5">
+        <div class="flex items-center justify-between">
+          <span class="text-[14px] font-medium text-gray-900">알림 받기</span>
+          <button id="ob-schedules-toggle" onclick="toggleOnboardReminder('schedules', this)" class="w-11 h-6 rounded-full bg-brand-500 relative transition-colors duration-200 flex-shrink-0" data-on="true">
+            <span class="absolute top-0.5 left-[22px] w-5 h-5 bg-white rounded-full shadow transition-all duration-200"></span>
+          </button>
+        </div>
+        <div id="ob-schedules-options" class="mt-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span class="text-[13px] text-gray-600">사전 알림</span>
+            </div>
+            <select id="ob-schedules-time" class="text-[13px] font-medium border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-brand-300">
+              <option value="10">10분 전</option>
+              <option value="15">15분 전</option>
+              <option value="30" selected>30분 전</option>
+              <option value="60">1시간 전</option>
+            </select>
+          </div>
+          <p class="text-[11px] text-gray-400 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            일정 시작 전 회의 정보와 참고 자료를 정리해드려요
+          </p>
+        </div>
+      </div>
+
+      <button onclick="goToStep5()"
+        class="w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200">
+        다음
+      </button>
+      <button onclick="goToStep3()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        이전
+      </button>
+    </div>
+
+    <!-- Step 5: 퇴근 마무리 리포트 설정 -->
+    <div id="onboardStep5" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-green-50 mx-auto flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900">퇴근 마무리 리포트</h2>
+        <p class="mt-2 text-sm text-gray-500 leading-relaxed">퇴근 전에 오늘 처리한 업무와 남은 할 일,<br>내일 일정까지 한눈에 정리해드릴까요?</p>
+      </div>
+
+      <!-- 토글 -->
+      <div class="bg-gray-50 rounded-2xl p-5">
+        <div class="flex items-center justify-between">
+          <span class="text-[14px] font-medium text-gray-900">알림 받기</span>
+          <button id="ob-wrapup-toggle" onclick="toggleOnboardReminder('wrapup', this)" class="w-11 h-6 rounded-full bg-brand-500 relative transition-colors duration-200 flex-shrink-0" data-on="true">
+            <span class="absolute top-0.5 left-[22px] w-5 h-5 bg-white rounded-full shadow transition-all duration-200"></span>
+          </button>
+        </div>
+        <div id="ob-wrapup-options" class="mt-4 space-y-3">
+          <div class="flex items-center gap-2 text-[13px] text-gray-600">
+            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>18:00 이후 마지막 접속 <strong class="text-gray-700">1시간 뒤</strong> 알림</span>
+          </div>
+          <p class="text-[11px] text-gray-400 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            퇴근 시점의 업무 현황·내일 일정을 수집해요
+          </p>
+        </div>
+      </div>
+
+      <button onclick="completeOnboarding()"
+        class="w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200">
+        시작하기
+      </button>
+      <button onclick="goToStep4()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        이전
       </button>
     </div>
   </div>
@@ -641,7 +782,7 @@ tailwind.config = {
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 hidden" id="chatDetailAvatar">
-        <span class="text-sm" id="chatDetailAvatarEmoji">🐙</span>
+        <span class="text-sm w-full h-full" id="chatDetailAvatarEmoji"><img src="floki.png" alt="플로키" class="w-full h-full rounded-full object-cover"></span>
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-bold text-gray-900" id="chatDetailTitle">브리핑 리포트</p>
@@ -826,8 +967,8 @@ tailwind.config = {
       <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div class="px-4 pt-3 pb-1"><p class="text-[12px] font-semibold text-gray-400 uppercase tracking-wider">AI 캐릭터</p></div>
         <div class="flex items-center gap-4 px-4 py-3">
-          <div id="settingsCharBg" class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
-            <span class="text-2xl" id="settingsCharEmoji">🐙</span>
+          <div id="settingsCharBg" class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+            <span class="text-2xl w-full h-full" id="settingsCharEmoji"><img src="floki.png" alt="플로키" class="w-full h-full object-cover rounded-2xl"></span>
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-[14px] font-bold text-gray-900" id="settingsCharName">플로키</p>
@@ -855,10 +996,16 @@ tailwind.config = {
 <script>
 // ─── Character & Personality Data ───────────────────
 const CHARACTERS = {
-  floki:   { name:'플로키',  emoji:'🐙', bg:'linear-gradient(135deg, #FFD1E8, #FFA3C7)', dotBg:'#FFE4F0', desc:'호기심 많은 바다 탐험가' },
+  floki:   { name:'플로키',  emoji:'🐙', img:'floki.png', bg:'linear-gradient(135deg, #FFD1E8, #FFA3C7)', dotBg:'#FFE4F0', desc:'호기심 많은 바다 탐험가' },
   penguin: { name:'펭귀니', emoji:'🐧', bg:'linear-gradient(135deg, #D1E8FF, #8EC5FC)', dotBg:'#E0EEFF', desc:'남극에서 온 업무 도우미' },
   turtle:  { name:'거북이',  emoji:'🐢', bg:'linear-gradient(135deg, #D1FFE8, #8EFCB3)', dotBg:'#E0FFE8', desc:'믿음직한 숲속 길잡이' },
 };
+
+// ─── Helper: 캐릭터 아이콘 (이미지 또는 이모지) ──────────
+function charIcon(c, sizeClass) {
+  if (c.img) return `<img src="${c.img}" alt="${c.name}" class="${sizeClass} rounded-full object-cover">`;
+  return `<span class="${sizeClass}">${c.emoji}</span>`;
+}
 
 const PERSONALITIES = [
   { id:'smart',      label:'똑똑한',   icon:'🧠', desc:'정확하고 분석적인 답변을 해줘요' },
@@ -1118,7 +1265,7 @@ function initSettingsScreen() {
   const c = getChar();
 
   // 현재 캐릭터 표시
-  document.getElementById('settingsCharEmoji').textContent = c.emoji;
+  document.getElementById('settingsCharEmoji').innerHTML = charIcon(c, 'text-2xl w-full h-full');
   document.getElementById('settingsCharBg').style.background = c.bg;
   document.getElementById('settingsCharName').textContent = c.name;
   document.getElementById('settingsCharDesc').textContent = c.desc;
@@ -1131,7 +1278,7 @@ function initSettingsScreen() {
     const btn = document.createElement('button');
     btn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ' +
       (isActive ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200');
-    btn.innerHTML = `<span class="text-[12px]">${ch.emoji}</span>${ch.name}`;
+    btn.innerHTML = `${ch.img ? '<img src="'+ch.img+'" class="w-5 h-5 rounded-full object-cover">' : '<span class="text-[12px]">'+ch.emoji+'</span>'}${ch.name}`;
     btn.onclick = () => {
       state.character = id;
       localStorage.setItem('flowai_character', id);
@@ -1172,6 +1319,19 @@ function resetOnboarding() {
   document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('onboardNextBtn').disabled = true;
   document.getElementById('onboardNextBtn').className = 'w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed';
+  // 알림 토글 초기화
+  ['briefing','schedules','wrapup'].forEach(key => {
+    const toggle = document.getElementById('ob-' + key + '-toggle');
+    if (toggle) {
+      toggle.setAttribute('data-on', 'true');
+      toggle.classList.remove('bg-gray-300');
+      toggle.classList.add('bg-brand-500');
+      const dot = toggle.querySelector('span');
+      if (dot) dot.style.left = '22px';
+    }
+    const options = document.getElementById('ob-' + key + '-options');
+    if (options) options.style.display = '';
+  });
   goToStep1();
 }
 
@@ -1184,31 +1344,65 @@ function selectCharacter(charId) {
   btn.className = 'w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200';
 }
 
+function setOnboardStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('onboardStep' + i).style.display = i === n ? '' : 'none';
+    document.getElementById('stepDot' + i).className = 'w-8 h-1.5 rounded-full transition-colors ' + (i <= n ? 'bg-brand-500' : 'bg-gray-200');
+  }
+}
+
 function goToStep1() {
-  document.getElementById('onboardStep1').style.display = '';
-  document.getElementById('onboardStep2').style.display = 'none';
-  document.getElementById('stepDot1').className = 'w-8 h-1.5 rounded-full bg-brand-500 transition-colors';
-  document.getElementById('stepDot2').className = 'w-8 h-1.5 rounded-full bg-gray-200 transition-colors';
+  setOnboardStep(1);
 }
 
 function goToStep2() {
   if (!state.onboardChar) return;
   const c = CHARACTERS[state.onboardChar];
-  document.getElementById('step2CharEmoji').textContent = c.emoji;
+  document.getElementById('step2CharEmoji').innerHTML = charIcon(c, 'text-4xl w-full h-full');
   document.getElementById('step2CharBg').style.background = c.bg;
   document.getElementById('step2CharName').textContent = c.name;
 
   // 성격 옵션 렌더링
   renderPersonalityOptions('personalityList', 'onboard');
 
-  document.getElementById('onboardStep1').style.display = 'none';
-  document.getElementById('onboardStep2').style.display = '';
-  document.getElementById('stepDot1').className = 'w-8 h-1.5 rounded-full bg-brand-500 transition-colors';
-  document.getElementById('stepDot2').className = 'w-8 h-1.5 rounded-full bg-brand-500 transition-colors';
+  setOnboardStep(2);
 
   state.onboardPersonality = null;
   document.getElementById('onboardCompleteBtn').disabled = true;
   document.getElementById('onboardCompleteBtn').className = 'w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed';
+}
+
+function goToStep3() {
+  if (!state.onboardPersonality) return;
+  setOnboardStep(3);
+}
+
+function goToStep4() {
+  setOnboardStep(4);
+}
+
+function goToStep5() {
+  setOnboardStep(5);
+}
+
+function toggleOnboardReminder(key, btn) {
+  const isOn = btn.getAttribute('data-on') === 'true';
+  const newState = !isOn;
+  btn.setAttribute('data-on', String(newState));
+  const dot = btn.querySelector('span');
+  if (newState) {
+    btn.classList.remove('bg-gray-300');
+    btn.classList.add('bg-brand-500');
+    dot.style.left = '22px';
+  } else {
+    btn.classList.remove('bg-brand-500');
+    btn.classList.add('bg-gray-300');
+    dot.style.left = '2px';
+  }
+  const options = document.getElementById('ob-' + key + '-options');
+  if (options) {
+    options.style.display = newState ? '' : 'none';
+  }
 }
 
 function renderPersonalityOptions(containerId, context) {
@@ -1257,6 +1451,20 @@ function completeOnboarding() {
   localStorage.setItem('flowai_character', state.character);
   localStorage.setItem('flowai_personality', state.personality);
   localStorage.setItem('flowai_customized', 'true');
+
+  // 알림 설정 저장
+  ['briefing','schedules','wrapup'].forEach(key => {
+    const toggle = document.getElementById('ob-' + key + '-toggle');
+    if (toggle) {
+      const on = toggle.getAttribute('data-on') === 'true';
+      localStorage.setItem('flowai_reminder_' + key, String(on));
+    }
+  });
+  const briefingTime = document.getElementById('ob-briefing-time');
+  if (briefingTime) localStorage.setItem('flowai_briefing_time', briefingTime.value);
+  const schedTime = document.getElementById('ob-schedules-time');
+  if (schedTime) localStorage.setItem('flowai_schedules_time', schedTime.value);
+
   showToast(`${getChar().name}와 함께 시작해요!`);
   resumeAfterOnboarding();
 }
@@ -1291,8 +1499,8 @@ function resumeAfterOnboarding() {
 // ─── Home Screen ──────────────────────────────────────
 function updateHomeScreen() {
   const c = getChar();
-  document.getElementById('sidebarCharEmoji').textContent = c.emoji;
-  document.getElementById('sidebarProfileCharEmoji').textContent = c.emoji;
+  document.getElementById('sidebarCharEmoji').innerHTML = charIcon(c, 'text-[10px] w-full h-full');
+  document.getElementById('sidebarProfileCharEmoji').innerHTML = charIcon(c, 'text-xs w-full h-full');
   document.getElementById('sidebarProfileChar').style.background = c.dotBg;
 
   // 시나리오 시계 표시
@@ -1433,8 +1641,8 @@ function renderAssistantHome() {
   html += `
     <div class="px-5 py-5 bg-gradient-to-r from-brand-50/50 to-white">
       <div class="flex items-center gap-3">
-        <div class="w-14 h-14 rounded-full flex items-center justify-center shadow-md flex-shrink-0" style="background:${c.bg}">
-          <span class="text-3xl">${c.emoji}</span>
+        <div class="w-14 h-14 rounded-full flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden" style="background:${c.bg}">
+          ${charIcon(c, 'text-3xl w-full h-full')}
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-base font-bold text-gray-900">당신의 ${pLabel} AI 비서 ${c.name}에요!</p>
@@ -1470,8 +1678,8 @@ function renderNewCard(room, c, index) {
     <button onclick="openNotificationChat('${room.id}')" class="w-full bg-white rounded-2xl border border-brand-100 shadow-sm hover:shadow-md hover:border-brand-200 active:scale-[0.98] transition-all text-left animate-fade-in overflow-hidden" style="animation-delay:${index * 60}ms">
       <div class="px-4 pt-4 pb-3">
         <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
-            <span class="text-base">${c.emoji}</span>
+          <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden" style="background:${c.bg}">
+            ${charIcon(c, 'text-base w-full h-full')}
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-1">
@@ -1536,7 +1744,7 @@ function openNotificationChat(notifId) {
 
   // 헤더 아바타 설정
   avatarEl.style.background = c.bg;
-  emojiEl.textContent = c.emoji;
+  emojiEl.innerHTML = charIcon(c, 'text-sm w-full h-full');
   subtitleEl.textContent = c.name + ' · AI 비서';
 
   let chatHtml = '';
@@ -2613,8 +2821,8 @@ function renderAiBubble(c, content, isFirst = true) {
   if (isFirst) {
     return `
     <div class="chat-bubble flex items-start gap-2.5" style="opacity:0">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
-        <span class="text-sm">${c.emoji}</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden" style="background:${c.bg}">
+        ${charIcon(c, 'text-sm w-full h-full')}
       </div>
       <div class="md-bubble bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-md text-sm text-gray-900 max-w-[85%]">
         ${parsed}
@@ -2636,8 +2844,8 @@ function renderAiResponseStart(c, queryHtml) {
   const timeStr = getScenarioBubbleTime();
   return `<div class="chat-bubble ai-response" style="opacity:0">
     <div class="ai-header flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background:${c.bg}">
-        <span class="text-sm">${c.emoji}</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style="background:${c.bg}">
+        ${charIcon(c, 'text-sm w-full h-full')}
       </div>
       <div class="flex items-center gap-2">
         <span class="text-sm font-semibold text-gray-800">${c.name}</span>
@@ -2889,8 +3097,8 @@ function sendChatDetailMessage() {
   aiDiv.className = 'ai-response animate-fade-in mt-4';
   aiDiv.innerHTML = `
     <div class="ai-header flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background:${c.bg}">
-        <span class="text-sm">${c.emoji}</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style="background:${c.bg}">
+        ${charIcon(c, 'text-sm w-full h-full')}
       </div>
       <div class="flex items-center gap-2">
         <span class="text-sm font-semibold text-gray-800">${c.name}</span>
@@ -2976,8 +3184,8 @@ function handleAction(id, type) {
       const aiDiv = document.createElement('div');
       aiDiv.className = 'flex items-start gap-2.5 animate-fade-in';
       aiDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
-          <span class="text-sm">${c.emoji}</span>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden" style="background:${c.bg}">
+          ${charIcon(c, 'text-sm w-full h-full')}
         </div>
         <div class="flex items-end gap-1.5">
           <div class="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-md text-sm text-gray-900 max-w-[85%]">
@@ -3260,8 +3468,8 @@ function addTypingIndicator() {
   div.className = 'flex items-start gap-2 animate-fade-in';
   div.id = 'typingIndicator';
   div.innerHTML = `
-    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${c.bg}">
-      <span class="text-xs">${c.emoji}</span>
+    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden" style="background:${c.bg}">
+      ${charIcon(c, 'text-xs w-full h-full')}
     </div>
     <div class="bg-gray-50 px-3 py-2 rounded-lg dot-typing flex gap-1">
       <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
@@ -3375,7 +3583,7 @@ function startScenario(type) {
 
   // 푸시 알림 내용 업데이트
   const c = getChar();
-  document.getElementById('phonePushEmoji').textContent = c.emoji;
+  document.getElementById('phonePushEmoji').innerHTML = charIcon(c, 'text-lg w-full h-full');
   document.getElementById('phonePushTitle').textContent = sd.pushTitle;
   document.getElementById('phonePushSub').textContent = sd.pushSub;
 
