@@ -187,8 +187,8 @@ tailwind.config = {
               <span class="text-xs font-bold text-amber-600">AM 8:50</span>
               <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">출근</span>
             </div>
-            <p class="text-sm font-bold text-gray-900">오전 브리핑 알림</p>
-            <p class="text-xs text-gray-500 mt-1 leading-relaxed">출근길에 오늘의 일정, 마감 업무, 밤사이 변화를 정리한 브리핑 수신</p>
+            <p class="text-sm font-bold text-gray-900">오전 브리핑</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">오늘 일정과 업무 현황을 확인해보세요.</p>
             <div class="flex items-center gap-1 mt-2.5 flex-wrap">
               <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">🔔 푸시</span>
               <span class="text-gray-300 text-xs">→</span>
@@ -207,8 +207,8 @@ tailwind.config = {
               <span class="text-xs font-bold text-blue-600">AM 10:30</span>
               <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">업무 중</span>
             </div>
-            <p class="text-sm font-bold text-gray-900">일정 준비 알림</p>
-            <p class="text-xs text-gray-500 mt-1 leading-relaxed">넥스트랩 AI 솔루션 도입 미팅 30분 전, 고객사 정보와 준비 사항 안내</p>
+            <p class="text-sm font-bold text-gray-900">넥스트랩 AI 솔루션 도입 미팅 준비 알림</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">넥스트랩 AI 솔루션 도입 미팅 30분 전이에요. 미리 참고할 내용을 준비해드릴게요.</p>
             <div class="flex items-center gap-1 mt-2.5 flex-wrap">
               <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">🔔 푸시</span>
               <span class="text-gray-300 text-xs">→</span>
@@ -227,8 +227,8 @@ tailwind.config = {
               <span class="text-xs font-bold text-purple-600">PM 5:30</span>
               <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">퇴근 전</span>
             </div>
-            <p class="text-sm font-bold text-gray-900">하루 마무리 리포트</p>
-            <p class="text-xs text-gray-500 mt-1 leading-relaxed">오늘 처리한 업무 요약, 미처리 업무, 내일 할 일 정리</p>
+            <p class="text-sm font-bold text-gray-900">퇴근 마무리 리포트</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">오늘 하루를 정리해드렸어요. 확인해보세요.</p>
             <div class="flex items-center gap-1 mt-2.5 flex-wrap">
               <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">🔔 푸시</span>
               <span class="text-gray-300 text-xs">→</span>
@@ -640,7 +640,7 @@ tailwind.config = {
       <button onclick="chatDetailBack()" class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
-      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" id="chatDetailAvatar">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 hidden" id="chatDetailAvatar">
         <span class="text-sm" id="chatDetailAvatarEmoji">🐙</span>
       </div>
       <div class="flex-1 min-w-0">
@@ -713,7 +713,7 @@ tailwind.config = {
       <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div class="flex items-center justify-between p-4">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center"><span class="text-lg">📋</span></div>
+            <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center"><svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
             <div>
               <p class="text-[14px] font-medium text-gray-900">오전 브리핑</p>
               <p class="text-[12px] text-gray-400">출근 시 일정·업무·변경사항 요약</p>
@@ -739,7 +739,7 @@ tailwind.config = {
             </select>
           </div>
           <p class="text-[11px] text-gray-400 mt-2 ml-1 flex items-center gap-1" id="briefingCollectHint">
-            <span>📡</span> <span id="briefingCollectTime">07:30</span>부터 일정·업무·변경사항을 수집해요
+            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> <span id="briefingCollectTime">07:30</span>부터 일정·업무·변경사항을 수집해요
           </p>
         </div>
       </div>
@@ -748,7 +748,7 @@ tailwind.config = {
       <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div class="flex items-center justify-between p-4">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center"><span class="text-lg">📅</span></div>
+            <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center"><svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
             <div>
               <p class="text-[14px] font-medium text-gray-900">일정 준비 알림</p>
               <p class="text-[12px] text-gray-400">일정 시작 전 준비 사항 안내</p>
@@ -778,7 +778,7 @@ tailwind.config = {
       <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div class="flex items-center justify-between p-4">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center"><span class="text-lg">📊</span></div>
+            <div class="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
             <div>
               <p class="text-[14px] font-medium text-gray-900">퇴근 마무리 리포트</p>
               <p class="text-[12px] text-gray-400">하루 업무 정리 및 내일 준비</p>
@@ -796,7 +796,7 @@ tailwind.config = {
             </div>
           </div>
           <p class="text-[11px] text-gray-400 mt-2 ml-1 flex items-center gap-1">
-            <span>📡</span> 퇴근 시점의 업무 현황·내일 일정을 수집해요
+            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> 퇴근 시점의 업무 현황·내일 일정을 수집해요
           </p>
         </div>
       </div>
@@ -805,7 +805,7 @@ tailwind.config = {
       <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div class="flex items-center justify-between p-4">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center"><span class="text-lg">🔕</span></div>
+            <div class="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728A9 9 0 015.636 5.636"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
             <div>
               <p class="text-[14px] font-medium text-gray-900">방해금지 모드</p>
               <p class="text-[12px] text-gray-400">모든 AI 비서 알림을 일시 중지</p>
@@ -3306,8 +3306,8 @@ const SCENARIO_DATA = {
     label: '오전 출근',
     time: '8:50', clock: '8:50', displayTime: 'AM 9:05',
     sortMin: 545,
-    pushTitle: '좋은 아침이에요! 오전 브리핑 도착 📋',
-    pushSub: '오늘 일정 3건, 마감 업무 2건, 밤사이 변경 10건을 정리했어요.',
+    pushTitle: '오전 브리핑',
+    pushSub: '오늘 일정과 업무 현황을 확인해보세요.',
     chatTarget: 'briefing',
     phoneBg: 'linear-gradient(180deg,#0c1445 0%,#1a2a6c 40%,#2d4a7a 100%)',
   },
@@ -3315,8 +3315,8 @@ const SCENARIO_DATA = {
     label: '일정 준비 알림',
     time: '10:30', clock: '10:30', displayTime: 'AM 10:30',
     sortMin: 630,
-    pushTitle: '📅 넥스트랩 AI 솔루션 도입 미팅 30분 전이에요',
-    pushSub: '11:00 본사 5층 대회의실, 5명 참석. 고객사 자료를 미리 정리해드릴까요?',
+    pushTitle: '넥스트랩 AI 솔루션 도입 미팅 준비 알림',
+    pushSub: '넥스트랩 AI 솔루션 도입 미팅 30분 전이에요. 미리 참고할 내용을 준비해드릴게요.',
     chatTarget: 'sch-004',
     phoneBg: 'linear-gradient(180deg,#1a1a2e 0%,#16213e 40%,#0f3460 100%)',
   },
@@ -3324,8 +3324,8 @@ const SCENARIO_DATA = {
     label: '퇴근 전',
     time: '17:30', clock: '5:30', displayTime: 'PM 5:30',
     sortMin: 1050,
-    pushTitle: '오늘 하루 수고했어요! 마무리 리포트 📊',
-    pushSub: '완료 3건, 미처리 2건 정리했어요. 내일 준비도 도와드릴게요.',
+    pushTitle: '퇴근 마무리 리포트',
+    pushSub: '오늘 하루를 정리해드렸어요. 확인해보세요.',
     chatTarget: 'wrapup',
     phoneBg: 'linear-gradient(180deg,#2d1b69 0%,#4a2072 30%,#7b3f8f 60%,#c06c84 85%,#f67280 100%)',
   },
