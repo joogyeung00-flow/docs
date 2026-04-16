@@ -73,6 +73,40 @@ tailwind.config = {
   .animate-pop-in { animation: popIn 300ms cubic-bezier(0.34,1.56,0.64,1) both; }
   .char-card { transition: all 200ms ease; }
   .char-card.selected { border-color: #5B40F8; background: #F3F1FF; box-shadow: 0 0 0 2px #5B40F8; }
+  .custom-char-modal {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  }
+  .custom-char-modal .modal-content {
+    background: white; border-radius: 20px; width: 340px; height: 480px; max-height: 85vh;
+    overflow-y: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column;
+  }
+  .prompt-input {
+    width: 100%; border: 2px solid #E5E7EB; border-radius: 12px;
+    padding: 12px 14px; font-size: 14px; outline: none; resize: none;
+    transition: border-color 200ms;
+  }
+  .prompt-input:focus { border-color: #5B40F8; }
+  .gen-preview {
+    width: 120px; height: 120px; border-radius: 20px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #F3F1FF, #E8E4FF);
+    overflow: hidden; position: relative;
+  }
+  .gen-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+  .gen-loading {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(135deg, #F3F1FF, #E8E4FF);
+  }
+  .gen-loading .spinner {
+    width: 32px; height: 32px; border: 3px solid #E8E4FF;
+    border-top-color: #5B40F8; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .personality-chip { transition: all 150ms ease; }
   .personality-chip.selected { background: #5B40F8; color: white; border-color: #5B40F8; }
 
@@ -647,18 +681,64 @@ tailwind.config = {
         <div id="stepDot2" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
         <div id="stepDot3" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
         <div id="stepDot4" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
+        <div id="stepDot5" class="w-8 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
       </div>
 
-    <!-- Step 1: 브리핑 스타일 선택 -->
+    <!-- Step 1: 캐릭터 선택 -->
     <div id="onboardStep1" class="flex-1 overflow-y-auto px-6 pt-6 pb-4">
       <div class="text-center mb-2">
-        <div class="flex justify-center mb-4" id="onboardAvatar"></div>
-        <h2 class="text-2xl font-bold text-gray-900">브리핑 스타일을 골라주세요</h2>
-        <p class="mt-2 text-sm text-gray-500">브리핑, 일정 준비, 리포트 등<br>정보를 분석하고 전달하는 방식이 달라져요.</p>
+        <h2 class="text-2xl font-bold text-gray-900">나와 함께할 AI 파트너를 선택하세요</h2>
+        <p class="mt-2 text-sm text-gray-500">언제든 원하는 스타일로 바꿀 수 있어요</p>
       </div>
 
-      <div class="mt-8 space-y-3" id="personalityList">
-        <!-- 성격 옵션들 (JS에서 렌더링) -->
+      <div class="mt-8 space-y-4">
+        <!-- 플로키 -->
+        <button onclick="selectCharacter('floki')" id="char-floki" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+            <img src="floki.png" alt="플로키" class="w-full h-full object-cover rounded-2xl">
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[14px] font-bold text-gray-900">플로키</span>
+            </div>
+            <p class="text-[12px] text-gray-500 mt-1">호기심 많은 바다 탐험가</p>
+          </div>
+        </button>
+
+        <!-- 펭귀니 -->
+        <button onclick="selectCharacter('penguin')" id="char-penguin" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
+          <img src="penguin.png" alt="펭귀니" class="w-16 h-16 rounded-2xl object-cover flex-shrink-0">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[14px] font-bold text-gray-900">펭귀니</span>
+            </div>
+            <p class="text-[12px] text-gray-500 mt-1">남극에서 온 업무 도우미</p>
+          </div>
+        </button>
+
+        <!-- 거북이 -->
+        <button onclick="selectCharacter('turtle')" id="char-turtle" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
+          <img src="turtle.png" alt="거북이" class="w-16 h-16 rounded-2xl object-cover flex-shrink-0">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[14px] font-bold text-gray-900">거북이</span>
+            </div>
+            <p class="text-[12px] text-gray-500 mt-1">믿음직한 숲속 길잡이</p>
+          </div>
+        </button>
+
+        <!-- 사용자 설정 -->
+        <button onclick="openCustomCharModal('onboard')" id="char-custom" class="char-card w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-2xl text-left">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden" id="customCharPreviewOnboard" style="background: linear-gradient(135deg, #F3F1FF, #E8E4FF)">
+            <span class="text-3xl" id="customCharIconOnboard">✨</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[14px] font-bold text-gray-900">사용자 설정</span>
+            </div>
+            <p class="text-[12px] text-gray-500 mt-1">프롬프트로 나만의 캐릭터 만들기</p>
+          </div>
+        </button>
       </div>
 
       <button id="onboardNextBtn" onclick="goToStep2()" disabled
@@ -670,8 +750,32 @@ tailwind.config = {
       </button>
     </div>
 
-    <!-- Step 2: 오전 브리핑 알림 설정 -->
+    <!-- Step 2: 비서 스타일 선택 -->
     <div id="onboardStep2" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
+      <div class="text-center mb-2">
+        <div class="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4 overflow-hidden" id="step2CharBg" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+          <span class="text-4xl w-full h-full" id="step2CharEmoji"><img src="floki.png" alt="플로키" class="w-full h-full rounded-full object-cover"></span>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900">이 비서는 어떻게 말해줄까요?</h2>
+        <p class="mt-2 text-sm text-gray-500">같은 정보도, 말투와 전달 방식에 따라<br>다르게 전달됩니다</p>
+      </div>
+
+      <div class="mt-8 space-y-3" id="personalityList">
+        <!-- 성격 옵션들 (JS에서 렌더링) -->
+      </div>
+
+      <button id="onboardCompleteBtn" onclick="goToStep3()" disabled
+        class="w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        다음
+      </button>
+      <button onclick="goToStep1()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        캐릭터 다시 선택
+      </button>
+    </div>
+
+    <!-- Step 3: 오전 브리핑 알림 설정 -->
+    <div id="onboardStep3" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
       <div class="text-center mb-6">
         <div class="w-16 h-16 rounded-2xl bg-amber-50 mx-auto flex items-center justify-center mb-4">
           <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -710,18 +814,18 @@ tailwind.config = {
         </div>
       </div>
 
-      <button onclick="goToStep3()"
+      <button onclick="goToStep4()"
         class="w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200">
         다음
       </button>
-      <button onclick="goToStep1()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+      <button onclick="goToStep2()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         이전
       </button>
     </div>
 
-    <!-- Step 3: 일정 브리핑 설정 -->
-    <div id="onboardStep3" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
+    <!-- Step 4: 일정 브리핑 설정 -->
+    <div id="onboardStep4" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
       <div class="text-center mb-6">
         <div class="w-16 h-16 rounded-2xl bg-blue-50 mx-auto flex items-center justify-center mb-4">
           <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -758,18 +862,18 @@ tailwind.config = {
         </div>
       </div>
 
-      <button onclick="goToStep4()"
+      <button onclick="goToStep5()"
         class="w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200">
         다음
       </button>
-      <button onclick="goToStep2()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+      <button onclick="goToStep3()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         이전
       </button>
     </div>
 
-    <!-- Step 4: 퇴근 브리핑 설정 -->
-    <div id="onboardStep4" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
+    <!-- Step 5: 퇴근 브리핑 설정 -->
+    <div id="onboardStep5" class="flex-1 overflow-y-auto px-6 pt-6 pb-4" style="display:none">
       <div class="text-center mb-6">
         <div class="w-16 h-16 rounded-2xl bg-green-50 mx-auto flex items-center justify-center mb-4">
           <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -802,7 +906,7 @@ tailwind.config = {
         class="w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200">
         시작하기
       </button>
-      <button onclick="goToStep3()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
+      <button onclick="goToStep4()" class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         이전
       </button>
@@ -819,7 +923,7 @@ tailwind.config = {
         <button onclick="toggleSidebar()" class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <span class="text-base font-bold text-gray-900">AI 비서</span>
+        <span class="text-base font-bold text-gray-900" id="homeHeaderName">AI 비서</span>
         <!-- 시나리오 시계 -->
         <span id="scenarioClock" class="hidden ml-1 px-2 py-0.5 rounded-full bg-gray-100 text-[11px] font-mono font-semibold text-gray-500 tracking-wide"></span>
       </div>
@@ -1023,9 +1127,24 @@ tailwind.config = {
         <p class="text-[14px] font-bold text-gray-900">AI 비서 설정</p>
       </div>
 
-      <!-- 브리핑 스타일 -->
+      <!-- AI 캐릭터 (드롭다운) -->
       <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div class="px-4 pt-3 pb-1"><p class="text-[12px] font-semibold text-gray-400 uppercase tracking-wider">브리핑 스타일</p></div>
+        <div class="px-4 pt-3 pb-1"><p class="text-[12px] font-semibold text-gray-400 uppercase tracking-wider">AI 캐릭터</p></div>
+        <button onclick="openCharacterSheet()" class="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left">
+          <div id="settingsCharBg" class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)">
+            <span class="text-2xl w-full h-full" id="settingsCharEmoji"><img src="floki.png" alt="플로키" class="w-full h-full object-cover rounded-2xl"></span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[14px] font-bold text-gray-900" id="settingsCharName">플로키</p>
+            <p class="text-[12px] text-gray-500" id="settingsCharDesc">호기심 많은 바다 탐험가</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- 비서 스타일 -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div class="px-4 pt-3 pb-1"><p class="text-[12px] font-semibold text-gray-400 uppercase tracking-wider">비서 스타일</p></div>
         <div class="px-4 py-3" id="settingsPersonalityList">
           <!-- JS에서 렌더링 -->
         </div>
@@ -1034,22 +1153,315 @@ tailwind.config = {
     </div>
   </div>
 
+<!-- 캐릭터 선택 바텀시트 (목업 디스플레이 내부) -->
+<div id="charSheetOverlay" class="absolute inset-0 z-[200] bg-black/40 hidden" onclick="if(event.target===this)closeCharacterSheet()">
+  <div id="charSheetPanel" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl transform translate-y-full transition-transform duration-300 ease-out" style="max-height:70%">
+    <div class="flex justify-center pt-3 pb-1"><div class="w-10 h-1 bg-gray-300 rounded-full"></div></div>
+    <div class="px-5 pb-2 flex items-center justify-between">
+      <p class="text-[16px] font-bold text-gray-900">캐릭터 선택</p>
+      <button onclick="closeCharacterSheet()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="overflow-y-auto px-4 pb-6" style="max-height:calc(70vh - 60px)" id="charSheetList">
+      <!-- JS에서 렌더링 -->
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- 사용자 캐릭터 생성 모달 -->
+<div id="customCharModal" class="custom-char-modal" style="display:none" onclick="if(event.target===this)closeCustomCharModal()">
+  <div class="modal-content">
+
+    <!-- 상단: 닫기 + 스텝 인디케이터 -->
+    <div class="flex items-center justify-between mb-1">
+      <button onclick="closeCustomCharModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <div class="flex gap-1.5" id="modalStepDots">
+        <div id="msDot1" class="w-6 h-1.5 rounded-full bg-brand-500 transition-colors"></div>
+        <div id="msDot2" class="w-6 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
+        <div id="msDot3" class="w-6 h-1.5 rounded-full bg-gray-200 transition-colors"></div>
+      </div>
+      <div class="w-8"></div>
+    </div>
+
+    <!-- ───── Step 1: 프롬프트 입력 ───── -->
+    <div id="modalStep1" class="flex-1 flex flex-col">
+      <div class="text-center mt-2 mb-4">
+        <h3 class="text-lg font-bold text-gray-900">어떤 캐릭터를 원하세요?</h3>
+        <p class="text-[13px] text-gray-500 mt-1">원하는 모습을 자유롭게 설명해주세요</p>
+      </div>
+
+      <!-- 스타일 프리셋 -->
+      <div class="mb-4">
+        <p class="text-[11px] font-medium text-gray-400 mb-1.5">스타일</p>
+        <div class="flex gap-1.5 flex-wrap">
+          <button onclick="applyStylePreset('귀여운 마스코트 스타일')" class="px-2.5 py-1 text-[11px] bg-gray-100 text-gray-600 rounded-full hover:bg-brand-50 hover:text-brand-600 transition-colors">귀여운 마스코트</button>
+          <button onclick="applyStylePreset('미니멀 라인 아트 스타일')" class="px-2.5 py-1 text-[11px] bg-gray-100 text-gray-600 rounded-full hover:bg-brand-50 hover:text-brand-600 transition-colors">미니멀 라인아트</button>
+          <button onclick="applyStylePreset('3D 렌더링 캐릭터 스타일')" class="px-2.5 py-1 text-[11px] bg-gray-100 text-gray-600 rounded-full hover:bg-brand-50 hover:text-brand-600 transition-colors">3D 렌더링</button>
+          <button onclick="applyStylePreset('수채화 일러스트 스타일')" class="px-2.5 py-1 text-[11px] bg-gray-100 text-gray-600 rounded-full hover:bg-brand-50 hover:text-brand-600 transition-colors">수채화</button>
+          <button onclick="applyStylePreset('픽셀 아트 도트 스타일')" class="px-2.5 py-1 text-[11px] bg-gray-100 text-gray-600 rounded-full hover:bg-brand-50 hover:text-brand-600 transition-colors">픽셀 아트</button>
+          <button onclick="applyStylePreset('플랫 디자인 일러스트 스타일')" class="px-2.5 py-1 text-[11px] bg-gray-100 text-gray-600 rounded-full hover:bg-brand-50 hover:text-brand-600 transition-colors">플랫 디자인</button>
+          <button onclick="applyStylePreset('애니메이션 스타일')" class="px-2.5 py-1 text-[11px] bg-gray-100 text-gray-600 rounded-full hover:bg-brand-50 hover:text-brand-600 transition-colors">애니메이션</button>
+        </div>
+      </div>
+
+      <!-- 배경 색상 -->
+      <div class="mb-4">
+        <p class="text-[11px] font-medium text-gray-400 mb-1.5">배경 색상</p>
+        <div class="flex gap-2 flex-wrap" id="colorPicker">
+          <button onclick="selectCustomColor('#FFD1E8','#FFA3C7')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #FFD1E8, #FFA3C7)"></button>
+          <button onclick="selectCustomColor('#D1E8FF','#8EC5FC')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #D1E8FF, #8EC5FC)"></button>
+          <button onclick="selectCustomColor('#D1FFE8','#8EFCB3')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #D1FFE8, #8EFCB3)"></button>
+          <button onclick="selectCustomColor('#F3F1FF','#D4CCFF')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #F3F1FF, #D4CCFF)"></button>
+          <button onclick="selectCustomColor('#FFF3D1','#FFE08C')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #FFF3D1, #FFE08C)"></button>
+          <button onclick="selectCustomColor('#FFE4D1','#FFB88C')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #FFE4D1, #FFB88C)"></button>
+          <button onclick="selectCustomColor('#E8D1FF','#C48CFF')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #E8D1FF, #C48CFF)"></button>
+          <button onclick="selectCustomColor('#D1F5FF','#8CE8FC')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #D1F5FF, #8CE8FC)"></button>
+          <button onclick="selectCustomColor('#F0F0F0','#CFCFCF')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #F0F0F0, #CFCFCF)"></button>
+          <button onclick="selectCustomColor('#2D2D2D','#1A1A1A')" class="w-7 h-7 rounded-full border-2 border-transparent hover:border-gray-300 transition-all" style="background: linear-gradient(135deg, #2D2D2D, #1A1A1A)"></button>
+        </div>
+      </div>
+
+      <div class="flex-1"></div>
+
+      <!-- 프롬프트 입력 (채팅 입력 컴포넌트 스타일) -->
+      <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div class="px-4 pt-3 pb-1">
+          <input id="customCharPrompt" type="text" placeholder="예: 별이 반짝이는 우주복을 입은 귀여운 고양이"
+            class="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 border-none outline-none"
+            onkeydown="if(event.key==='Enter')generateCustomChar()"
+            oninput="updateGenBtnState()">
+        </div>
+        <div class="flex items-center justify-between px-2 pb-2">
+          <div class="flex items-center">
+            <button onclick="showToast('참고 이미지 첨부 (준비 중)')" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-md hover:bg-gray-100">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="showToast('이미지 모델 선택 (준비 중)')" class="flex items-center gap-1 h-8 px-2 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+              <svg class="w-3.5 h-3.5 text-brand-500" viewBox="0 0 24 24" fill="none"><path d="M12 2L12 22M2 12L22 12M6.34 6.34L17.66 17.66M17.66 6.34L6.34 17.66" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <span class="text-[11px] text-gray-500">DALL-E</span>
+              <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <button id="genBtn" onclick="generateCustomChar()" class="w-8 h-8 flex items-center justify-center bg-brand-500 text-white rounded-md transition-colors flex-shrink-0 opacity-50 cursor-not-allowed" disabled>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ───── Step 2: 이미지 확인 ───── -->
+    <div id="modalStep2" style="display:none" class="flex-1 flex flex-col">
+      <div class="text-center mt-2 mb-4">
+        <h3 class="text-lg font-bold text-gray-900" id="step2Title">이미지 생성 중...</h3>
+        <p class="text-[13px] text-gray-500 mt-1" id="step2Desc">잠시만 기다려주세요</p>
+      </div>
+
+      <!-- 미리보기 (로딩 + 결과) -->
+      <div class="flex-1 flex items-center justify-center">
+        <div class="w-40 h-40 rounded-2xl flex items-center justify-center overflow-hidden" id="step2Preview"
+          style="background: linear-gradient(135deg, #F3F1FF, #E8E4FF); position: relative;">
+        </div>
+      </div>
+
+      <!-- 버튼 -->
+      <div id="step2Buttons" style="display:none" class="mt-4">
+        <button onclick="goModalStep(3)" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200 mb-2">
+          마음에 들어요!
+        </button>
+        <button onclick="goModalStep(1)" class="w-full py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+          다시 만들기
+        </button>
+      </div>
+    </div>
+
+    <!-- ───── Step 3: 이름 짓기 ───── -->
+    <div id="modalStep3" style="display:none" class="flex-1 flex flex-col">
+      <div class="text-center mt-2 mb-4">
+        <h3 class="text-lg font-bold text-gray-900">이름을 지어주세요</h3>
+        <p class="text-[13px] text-gray-500 mt-1">나만의 AI 캐릭터에게 이름을 붙여주세요</p>
+      </div>
+
+      <!-- 캐릭터 미리보기 (작게) -->
+      <div class="flex-1 flex items-center justify-center">
+        <div class="w-24 h-24 rounded-2xl flex items-center justify-center overflow-hidden" id="step3Preview"
+          style="background: linear-gradient(135deg, #F3F1FF, #E8E4FF)">
+        </div>
+      </div>
+
+      <!-- 이름 입력 -->
+      <div class="mb-5 mt-4">
+        <input type="text" id="customCharName" class="w-full text-center text-xl font-bold text-gray-900 border-b-2 border-gray-200 focus:border-brand-500 outline-none py-2 transition-colors bg-transparent"
+          placeholder="캐릭터 이름" maxlength="10"
+          oninput="updateApplyBtnState()">
+        <p class="text-[11px] text-gray-400 mt-2 text-center">최대 10자</p>
+      </div>
+
+      <!-- 완료 버튼 -->
+      <button onclick="applyCustomChar()" id="applyCustomBtn"
+        class="w-full py-3 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 cursor-not-allowed" disabled>
+        완료
+      </button>
+      <button onclick="goModalStep(2)" class="w-full py-2.5 mt-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+        이전으로
+      </button>
+    </div>
+
+  </div>
 </div>
 
 <script>
 // ─── Character & Personality Data ───────────────────
+const CHARACTERS = {
+  floki:   { name:'플로키',  emoji:'🐙', img:'floki.png', bg:'linear-gradient(135deg, #FFD1E8, #FFA3C7)', dotBg:'#FFE4F0', desc:'호기심 많은 바다 탐험가' },
+  penguin: { name:'펭귀니', emoji:'🐧', bg:'linear-gradient(135deg, #D1E8FF, #8EC5FC)', dotBg:'#E0EEFF', desc:'남극에서 온 업무 도우미', img:'penguin.png' },
+  turtle:  { name:'거북이',  emoji:'🐢', bg:'linear-gradient(135deg, #D1FFE8, #8EFCB3)', dotBg:'#E0FFE8', desc:'믿음직한 숲속 길잡이', img:'turtle.png' },
+};
+
+// ─── Helper: 캐릭터 아이콘 (이미지 또는 이모지) ──────────
+function charIcon(c, sizeClass) {
+  if (c.generatedImg) return `<img src="${c.generatedImg}" alt="${c.name}" class="${sizeClass} rounded-full object-cover">`;
+  if (c.img) return `<img src="${c.img}" alt="${c.name}" class="${sizeClass} rounded-full object-cover">`;
+  return `<span class="${sizeClass}">${c.emoji}</span>`;
+}
+
+// ─── Custom Character State ──────────────────────────
+let customCharModalSource = null; // 'onboard' or 'settings'
+let customCharGenerated = false;
+let customCharGenerating = false;
+let customCharColors = { c1: '#F3F1FF', c2: '#D4CCFF' };
+
+// Load saved custom characters from localStorage (다중 지원)
+(function loadCustomChars() {
+  // 다중 커스텀 캐릭터 로드
+  const savedMulti = localStorage.getItem('flowai_custom_characters');
+  if (savedMulti) {
+    try {
+      const list = JSON.parse(savedMulti);
+      list.forEach(data => { CHARACTERS[data.id] = data; });
+    } catch(e) {}
+  }
+  // 기존 단일 커스텀 캐릭터 마이그레이션
+  const savedSingle = localStorage.getItem('flowai_custom_character');
+  if (savedSingle && !savedMulti) {
+    try {
+      const data = JSON.parse(savedSingle);
+      data.id = 'custom';
+      data.isCustom = true;
+      CHARACTERS.custom = data;
+      saveCustomCharacters();
+      localStorage.removeItem('flowai_custom_character');
+    } catch(e) {}
+  }
+})();
+
+function getCustomCharacters() {
+  return Object.entries(CHARACTERS).filter(([id, ch]) => ch.isCustom).map(([id, ch]) => ({ ...ch, id }));
+}
+
+function saveCustomCharacters() {
+  const list = getCustomCharacters();
+  localStorage.setItem('flowai_custom_characters', JSON.stringify(list));
+}
+
+function deleteCustomCharacter(charId) {
+  if (state.character === charId) {
+    state.character = 'floki';
+    localStorage.setItem('flowai_character', 'floki');
+  }
+  delete CHARACTERS[charId];
+  saveCustomCharacters();
+  renderCharacterSheet();
+  initSettingsScreen();
+  showToast('캐릭터가 삭제되었어요');
+}
+
+function openCharacterSheet() {
+  const overlay = document.getElementById('charSheetOverlay');
+  const panel = document.getElementById('charSheetPanel');
+  overlay.classList.remove('hidden');
+  renderCharacterSheet();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { panel.style.transform = 'translateY(0)'; });
+  });
+}
+
+function closeCharacterSheet() {
+  const overlay = document.getElementById('charSheetOverlay');
+  const panel = document.getElementById('charSheetPanel');
+  panel.style.transform = 'translateY(100%)';
+  setTimeout(() => { overlay.classList.add('hidden'); }, 300);
+}
+
+function renderCharacterSheet() {
+  const list = document.getElementById('charSheetList');
+  let html = '';
+
+  Object.entries(CHARACTERS).forEach(([id, ch]) => {
+    const isActive = id === state.character;
+    const iconHtml = ch.generatedImg
+      ? `<img src="${ch.generatedImg}" alt="${ch.name}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">`
+      : ch.img
+        ? `<img src="${ch.img}" alt="${ch.name}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">`
+        : `<div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:${ch.bg}"><span class="text-xl">${ch.emoji}</span></div>`;
+
+    html += `
+      <div class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all cursor-pointer ${isActive ? 'bg-brand-50 border border-brand-200' : 'hover:bg-gray-50 border border-transparent'}" onclick="selectCharFromSheet('${id}')">
+        ${iconHtml}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-[14px] font-medium ${isActive ? 'text-brand-700' : 'text-gray-900'}">${ch.name}</p>
+            ${isActive ? '<span class="text-[10px] text-brand-500 bg-brand-100 px-1.5 py-0.5 rounded-full font-medium">사용 중</span>' : ''}
+          </div>
+          <p class="text-[12px] ${isActive ? 'text-brand-500' : 'text-gray-400'} mt-0.5">${ch.desc}</p>
+        </div>
+        ${ch.isCustom ? `<button onclick="event.stopPropagation();if(confirm('이 캐릭터를 삭제할까요?'))deleteCustomCharacter('${id}')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors flex-shrink-0"><svg class="w-4 h-4 text-gray-300 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : ''}
+      </div>`;
+  });
+
+  // 새 캐릭터 만들기 버튼
+  html += `
+    <button onclick="closeCharacterSheet();openCustomCharModal('settings')" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left hover:bg-gray-50 border border-dashed border-gray-300 mt-2 transition-colors">
+      <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-[14px] font-medium text-gray-600">새 캐릭터 만들기</p>
+        <p class="text-[12px] text-gray-400 mt-0.5">프롬프트로 나만의 캐릭터 만들기</p>
+      </div>
+    </button>`;
+
+  list.innerHTML = html;
+}
+
+function selectCharFromSheet(id) {
+  state.character = id;
+  localStorage.setItem('flowai_character', id);
+  closeCharacterSheet();
+  initSettingsScreen();
+}
+
 const PERSONALITIES = [
-  { id:'summary',    label:'요약형',   icon:'📋', desc:'핵심만 간결하게 정리해서 전달해요' },
-  { id:'analysis',   label:'분석형',   icon:'📊', desc:'데이터와 근거를 기반으로 상세히 분석해요' },
-  { id:'friendly',   label:'친근형',   icon:'💬', desc:'대화하듯 편하게 풀어서 설명해요' },
-  { id:'directive',  label:'지시형',   icon:'🎯', desc:'바로 실행할 수 있는 액션 중심으로 알려줘요' },
+  { id:'summary',    label:'빠르게 핵심만',   icon:'📋', desc:'핵심만 간결하게 정리해요' },
+  { id:'analysis',   label:'꼼꼼하게 분석',   icon:'📊', desc:'근거를 기반으로 자세히 설명해요' },
+  { id:'friendly',   label:'편하게 대화',     icon:'💬', desc:'자연스럽게 풀어서 설명해요' },
+  { id:'directive',  label:'바로 실행',       icon:'🎯', desc:'바로 할 수 있는 액션 중심으로 알려줘요' },
 ];
 
 // ─── State ────────────────────────────────────────────
 const state = {
+  character: localStorage.getItem('flowai_character') || null,
   personality: localStorage.getItem('flowai_personality') || null,
   isCustomized: localStorage.getItem('flowai_customized') === 'true',
   // 온보딩 임시
+  onboardChar: null,
   onboardPersonality: null,
   // 리마인더 설정 (프로토타입용)
   reminderSettings: {},
@@ -1250,6 +1662,11 @@ function avatarStack(names, maxShow = 4) {
   return html;
 }
 
+// ─── Helper: 캐릭터 정보 가져오기 ──────────────
+function getChar() {
+  return CHARACTERS[state.character] || CHARACTERS.floki;
+}
+
 // ─── Helper: 성격 정보 가져오기 ──────────────
 function getPersonalityLabel() {
   const p = PERSONALITIES.find(p => p.id === state.personality);
@@ -1257,7 +1674,15 @@ function getPersonalityLabel() {
 }
 
 function aiAvatar(size = '') {
-  return `<div class="ai-avatar ${size}"><div class="ai-avatar-visor"><span class="ai-avatar-eye"></span><span class="ai-avatar-eye"></span></div></div>`;
+  const c = getChar();
+  const px = size === 'lg' ? 64 : 32;
+  if (c.generatedImg) return `<img src="${c.generatedImg}" alt="${c.name}" class="rounded-full object-cover flex-shrink-0" style="width:${px}px;height:${px}px;">`;
+  if (c.img) return `<img src="${c.img}" alt="${c.name}" class="rounded-full object-cover flex-shrink-0" style="width:${px}px;height:${px}px;">`;
+  return `<div class="flex items-center justify-center rounded-full flex-shrink-0" style="width:${px}px;height:${px}px;background:${c.bg}"><span style="font-size:${px * 0.55}px">${c.emoji}</span></div>`;
+}
+
+function aiName() {
+  return getChar().name;
 }
 
 function getContextualGreeting() {
@@ -1319,7 +1744,17 @@ function openProfileMenu() {
 }
 
 function initSettingsScreen() {
-  // 브리핑 스타일 선택 리스트
+  const c = getChar();
+
+  // 현재 캐릭터 표시
+  document.getElementById('settingsCharEmoji').innerHTML = charIcon(c, 'text-2xl w-full h-full');
+  document.getElementById('settingsCharBg').style.background = c.bg;
+  document.getElementById('settingsCharName').textContent = c.name;
+  document.getElementById('settingsCharDesc').textContent = c.desc;
+
+  // 캐릭터 선택은 바텀시트로 이동 (드롭다운 클릭 시 openCharacterSheet 호출)
+
+  // 성격 선택 리스트
   const pList = document.getElementById('settingsPersonalityList');
   pList.innerHTML = '';
   PERSONALITIES.forEach(pr => {
@@ -1337,7 +1772,7 @@ function initSettingsScreen() {
     btn.onclick = () => {
       state.personality = pr.id;
       localStorage.setItem('flowai_personality', pr.id);
-      showToast(`브리핑 스타일이 '${pr.label}'(으)로 변경되었어요`);
+      showToast(`비서 스타일이 '${pr.label}'(으)로 변경되었어요`);
       initSettingsScreen();
     };
     pList.appendChild(btn);
@@ -1346,7 +1781,9 @@ function initSettingsScreen() {
 
 // ─── Onboarding ──────────────────────────────────────
 function resetOnboarding() {
+  state.onboardChar = null;
   state.onboardPersonality = null;
+  document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('onboardNextBtn').disabled = true;
   document.getElementById('onboardNextBtn').className = 'w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed';
   // 알림 토글 초기화
@@ -1373,34 +1810,241 @@ function startOnboardingSteps() {
   goToStep1();
 }
 
+function selectCharacter(charId) {
+  state.onboardChar = charId;
+  document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('char-' + charId).classList.add('selected');
+  const btn = document.getElementById('onboardNextBtn');
+  btn.disabled = false;
+  btn.className = 'w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200';
+}
+
+// ─── Custom Character Modal (3-step flow) ───────────
+function openCustomCharModal(source) {
+  customCharModalSource = source;
+  customCharGenerated = false;
+  document.getElementById('customCharModal').style.display = '';
+  document.getElementById('customCharPrompt').value = localStorage.getItem('flowai_custom_prompt') || '';
+  // Reset
+  const s2p = document.getElementById('step2Preview');
+  delete s2p.dataset.generatedImg;
+  delete s2p.dataset.emoji;
+  // Always start at step 1
+  goModalStep(1);
+  updateGenBtnState();
+}
+
+function closeCustomCharModal() {
+  document.getElementById('customCharModal').style.display = 'none';
+}
+
+function goModalStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('modalStep' + i).style.display = i === n ? '' : 'none';
+    document.getElementById('msDot' + i).className = 'w-6 h-1.5 rounded-full transition-colors ' + (i <= n ? 'bg-brand-500' : 'bg-gray-200');
+  });
+
+  if (n === 2 && !customCharGenerating) {
+    // "다시 만들기"로 돌아온 경우 - 기존 이미지 유지하고 버튼 표시
+    document.getElementById('step2Title').textContent = '이 캐릭터 어때요?';
+    document.getElementById('step2Desc').textContent = '마음에 들지 않으면 다시 만들 수 있어요';
+    document.getElementById('step2Buttons').style.display = '';
+  }
+
+  if (n === 3) {
+    // Step 3에 이미지 복사
+    const s3 = document.getElementById('step3Preview');
+    const s2 = document.getElementById('step2Preview');
+    s3.innerHTML = s2.querySelector('img') ? `<img src="${s2.dataset.generatedImg}" class="w-full h-full object-cover rounded-2xl">` : '';
+    s3.style.background = s2.style.background;
+    // 이름 필드 초기화
+    document.getElementById('customCharName').value = CHARACTERS.custom ? CHARACTERS.custom.name : '';
+    updateApplyBtnState();
+    setTimeout(() => document.getElementById('customCharName').focus(), 100);
+  }
+}
+
+function selectCustomColor(c1, c2) {
+  customCharColors = { c1, c2 };
+  // Highlight selected color
+  document.querySelectorAll('#colorPicker button').forEach(b => {
+    b.classList.remove('ring-2', 'ring-brand-500', 'ring-offset-2');
+  });
+  event.target.classList.add('ring-2', 'ring-brand-500', 'ring-offset-2');
+}
+
+function updateGenBtnState() {
+  const input = document.getElementById('customCharPrompt');
+  const btn = document.getElementById('genBtn');
+  const hasText = input.value.trim().length > 0;
+  btn.disabled = !hasText;
+  btn.className = 'w-8 h-8 flex items-center justify-center bg-brand-500 text-white rounded-md transition-colors flex-shrink-0' +
+    (hasText ? '' : ' opacity-50 cursor-not-allowed');
+}
+
+function updateApplyBtnState() {
+  const name = document.getElementById('customCharName').value.trim();
+  const btn = document.getElementById('applyCustomBtn');
+  if (name.length > 0) {
+    btn.disabled = false;
+    btn.className = 'w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200';
+  } else {
+    btn.disabled = true;
+    btn.className = 'w-full py-3 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 cursor-not-allowed';
+  }
+}
+
+function applyStylePreset(style) {
+  const input = document.getElementById('customCharPrompt');
+  const current = input.value.trim();
+  if (current && !current.endsWith(',') && !current.endsWith('，')) {
+    input.value = current + ', ' + style;
+  } else {
+    input.value = (current ? current + ' ' : '') + style;
+  }
+  updateGenBtnState();
+  input.focus();
+}
+
+function generateCustomChar() {
+  const prompt = document.getElementById('customCharPrompt').value.trim();
+  if (!prompt) {
+    showToast('이미지 프롬프트를 입력해주세요');
+    return;
+  }
+
+  const s2 = document.getElementById('step2Preview');
+
+  // 즉시 Step 2로 이동, 로딩 표시
+  customCharGenerating = true;
+  goModalStep(2);
+  document.getElementById('step2Title').textContent = '이미지 생성 중...';
+  document.getElementById('step2Desc').textContent = '잠시만 기다려주세요';
+  document.getElementById('step2Buttons').style.display = 'none';
+  s2.style.background = `linear-gradient(135deg, ${customCharColors.c1}, ${customCharColors.c2})`;
+  s2.innerHTML = `<div class="gen-loading"><div class="spinner"></div><span class="text-[12px] text-brand-500 font-medium">AI가 그리는 중...</span></div>`;
+
+  // Simulate AI image generation (2 seconds)
+  setTimeout(() => {
+    const seed = prompt.length * 7 + prompt.charCodeAt(0);
+    const hue = seed % 360;
+    const emoji = ['🐱','🐰','🦊','🐻','🐼','🦁','🐶','🐸','🦄','🐲','🐵','🦋'][seed % 12];
+
+    const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:hsl(${hue},80%,90%)"/>
+          <stop offset="100%" style="stop-color:hsl(${hue},70%,80%)"/>
+        </linearGradient>
+      </defs>
+      <rect width="200" height="200" rx="20" fill="url(#bg)"/>
+      <text x="100" y="115" text-anchor="middle" font-size="80">${emoji}</text>
+    </svg>`;
+
+    const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+
+    s2.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover rounded-2xl">`;
+    s2.style.background = `linear-gradient(135deg, ${customCharColors.c1}, ${customCharColors.c2})`;
+    s2.dataset.generatedImg = dataUrl;
+    s2.dataset.emoji = emoji;
+
+    document.getElementById('step2Title').textContent = '이 캐릭터 어때요?';
+    document.getElementById('step2Desc').textContent = '마음에 들지 않으면 다시 만들 수 있어요';
+    document.getElementById('step2Buttons').style.display = '';
+
+    customCharGenerated = true;
+    customCharGenerating = false;
+    localStorage.setItem('flowai_custom_prompt', prompt);
+  }, 2000);
+}
+
+function applyCustomChar() {
+  const name = document.getElementById('customCharName').value.trim();
+  if (!name) return;
+  const desc = '나만의 AI 캐릭터';
+  const s2 = document.getElementById('step2Preview');
+  const generatedImg = s2.dataset.generatedImg;
+  const emoji = s2.dataset.emoji || '✨';
+
+  const bg = `linear-gradient(135deg, ${customCharColors.c1}, ${customCharColors.c2})`;
+  const dotBg = customCharColors.c1;
+
+  // 고유 ID 생성 (다중 커스텀 캐릭터 지원)
+  const charId = customCharModalSource === 'onboard' ? 'custom' : 'custom_' + Date.now();
+
+  CHARACTERS[charId] = {
+    id: charId,
+    name: name,
+    emoji: emoji,
+    generatedImg: generatedImg,
+    bg: bg,
+    dotBg: dotBg,
+    desc: desc,
+    isCustom: true
+  };
+
+  // Save to localStorage
+  saveCustomCharacters();
+
+  // Close modal
+  closeCustomCharModal();
+
+  if (customCharModalSource === 'onboard') {
+    // Update the onboard custom card preview
+    const previewEl = document.getElementById('customCharPreviewOnboard');
+    if (previewEl) {
+      previewEl.style.background = bg;
+      previewEl.innerHTML = `<img src="${generatedImg}" class="w-full h-full object-cover rounded-2xl">`;
+    }
+    const iconEl = document.getElementById('customCharIconOnboard');
+    if (iconEl) iconEl.style.display = 'none';
+    selectCharacter('custom');
+  } else {
+    state.character = charId;
+    localStorage.setItem('flowai_character', charId);
+    initSettingsScreen();
+    showToast(`'${name}' 캐릭터가 추가되었어요`);
+  }
+}
+
 function setOnboardStep(n) {
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 5; i++) {
     document.getElementById('onboardStep' + i).style.display = i === n ? '' : 'none';
     document.getElementById('stepDot' + i).className = 'w-8 h-1.5 rounded-full transition-colors ' + (i <= n ? 'bg-brand-500' : 'bg-gray-200');
   }
 }
 
 function goToStep1() {
-  // 아바타 + 브리핑 스타일 선택
-  document.getElementById('onboardAvatar').innerHTML = aiAvatar('lg');
-  renderPersonalityOptions('personalityList', 'onboard');
   setOnboardStep(1);
-  state.onboardPersonality = null;
-  document.getElementById('onboardNextBtn').disabled = true;
-  document.getElementById('onboardNextBtn').className = 'w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed';
 }
 
 function goToStep2() {
-  if (!state.onboardPersonality) return;
+  if (!state.onboardChar) return;
+  const c = CHARACTERS[state.onboardChar];
+  document.getElementById('step2CharEmoji').innerHTML = charIcon(c, 'text-4xl w-full h-full');
+  document.getElementById('step2CharBg').style.background = c.bg;
+
+  // 성격 옵션 렌더링
+  renderPersonalityOptions('personalityList', 'onboard');
+
   setOnboardStep(2);
+
+  state.onboardPersonality = null;
+  document.getElementById('onboardCompleteBtn').disabled = true;
+  document.getElementById('onboardCompleteBtn').className = 'w-full mt-6 py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed';
 }
 
 function goToStep3() {
+  if (!state.onboardPersonality) return;
   setOnboardStep(3);
 }
 
 function goToStep4() {
   setOnboardStep(4);
+}
+
+function goToStep5() {
+  setOnboardStep(5);
 }
 
 function toggleOnboardReminder(key, btn) {
@@ -1453,7 +2097,7 @@ function selectPersonality(pId, context, btnEl) {
 
   if (context === 'onboard') {
     state.onboardPersonality = pId;
-    const btn = document.getElementById('onboardNextBtn');
+    const btn = document.getElementById('onboardCompleteBtn');
     btn.disabled = false;
     btn.className = 'w-full mt-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-all duration-200';
   } else {
@@ -1462,9 +2106,11 @@ function selectPersonality(pId, context, btnEl) {
 }
 
 function completeOnboarding() {
-  if (!state.onboardPersonality) return;
+  if (!state.onboardChar || !state.onboardPersonality) return;
+  state.character = state.onboardChar;
   state.personality = state.onboardPersonality;
   state.isCustomized = true;
+  localStorage.setItem('flowai_character', state.character);
   localStorage.setItem('flowai_personality', state.personality);
   localStorage.setItem('flowai_customized', 'true');
 
@@ -1481,17 +2127,19 @@ function completeOnboarding() {
   const schedTime = document.getElementById('ob-schedules-time');
   if (schedTime) localStorage.setItem('flowai_schedules_time', schedTime.value);
 
-  showToast('AI 비서 설정이 완료되었어요!');
+  showToast(`${getChar().name}와 함께 시작해요!`);
   resumeAfterOnboarding();
 }
 
 function skipOnboarding() {
   // 기본값 설정
+  state.character = 'floki';
   state.personality = 'summary';
   state.isCustomized = true;
+  localStorage.setItem('flowai_character', 'floki');
   localStorage.setItem('flowai_personality', 'summary');
   localStorage.setItem('flowai_customized', 'true');
-  showToast('기본 스타일(요약형)로 설정되었어요');
+  showToast('플로키가 기본 캐릭터로 설정되었어요');
   resumeAfterOnboarding();
 }
 
@@ -1537,6 +2185,9 @@ function updateHomeScreen() {
 
 function renderAssistantHome() {
   const home = document.getElementById('assistantHome');
+  // 헤더 타이틀은 항상 "AI 비서"
+  const headerName = document.getElementById('homeHeaderName');
+  if (headerName) headerName.textContent = 'AI 비서';
 
   // ── 모든 알림 항목을 자연어 제목으로 생성 ──
   let allRooms = [];
@@ -1650,25 +2301,37 @@ function renderAssistantHome() {
   let html = '';
   let itemIdx = 0;
 
-  // ── 인사말 (상단) ──
+  // ── 히어로 + 알림 카드 (그라데이션 배경 통합) ──
   const greetings = getContextualGreeting();
+  const c = getChar();
+  const charName = c.name;
+  const dotBg = c.dotBg || '#F3F1FF';
   html += `
-    <div class="px-5 pt-5 pb-3 flex items-start gap-3">
-      ${aiAvatar()}
-      <p class="text-[15px] leading-relaxed text-gray-800 font-medium pt-0.5">${greetings}</p>
-    </div>`;
+    <div class="relative overflow-hidden" style="background: ${dotBg};">
+      <div class="absolute inset-0 opacity-30" style="background: radial-gradient(circle at 50% 15%, ${dotBg} 0%, transparent 60%);"></div>
+      <div class="absolute top-0 left-0 right-0 h-2/3" style="background: linear-gradient(to bottom, white 0%, transparent 100%);"></div>
+      <div class="relative px-5 pt-8 pb-4 flex flex-col items-center text-center">
+        <div class="relative">
+          <div class="absolute -inset-2 rounded-full opacity-40 animate-pulse" style="background: radial-gradient(circle, ${dotBg} 0%, transparent 70%);"></div>
+          ${aiAvatar('lg')}
+        </div>
+        <h2 class="text-[17px] font-bold text-gray-900 mt-3">당신의 AI 비서, <span style="color:#5B40F8">${charName}</span>에요!</h2>
+        <p class="text-[13px] text-gray-500 mt-1.5 leading-relaxed">${greetings}</p>
+      </div>`;
 
   // ── 새 알림 카드 ──
   if (newRooms.length > 0) {
-    html += `<div class="px-4 pt-4 pb-2 space-y-3">`;
+    html += `<div class="relative px-4 pt-3 pb-4 space-y-3">`;
     newRooms.forEach(room => { html += renderNewCard(room, itemIdx++); });
     html += `</div>`;
   } else {
     html += `
-    <div class="flex flex-col items-center justify-center py-10 px-6 text-center">
+    <div class="relative flex flex-col items-center justify-center py-10 px-6 text-center">
       <p class="text-sm text-gray-400">새로운 알림이 없어요</p>
     </div>`;
   }
+
+  html += `</div>`;
 
   // ── 지난 대화 섹션 ──
   html += `<div class="px-5 pt-5 pb-2 border-t border-gray-100"><p class="text-xs font-bold text-gray-400 tracking-wider">지난 대화</p></div>`;
@@ -1850,6 +2513,43 @@ function renderBriefingChat() {
 
   // 인사
   html += aiText(`신주경님, 좋은 아침이에요! 오늘 하루를 쭉 살펴봤어요.\n\n---`);
+
+  // ── 오늘 하루 분석 (첫 번째 섹션) ──
+  {
+    const totalSchedules = S.length;
+    const totalTasks = T.length;
+    const urgentTasks = T.filter(t => t.priority === 'URGENT').length;
+    const todayDueTasks = T.filter(t => t.due.includes('오늘')).length;
+    const absCount = abs.items.length;
+
+    let daySummary = `### 📈 오늘 하루 분석\n\n`;
+    daySummary += `오늘은 **일정 ${totalSchedules}건**, **업무 ${totalTasks}건**이 있고`;
+    if (absCount > 0) daySummary += `, 퇴근 후 변화 **${absCount}건**이 쌓여 있어요.`;
+    else daySummary += `.`;
+    if (urgentTasks > 0) daySummary += ` 긴급 업무가 ${urgentTasks}건 있으니 오전에 먼저 처리하는 게 좋겠어요.`;
+    else if (todayDueTasks > 0) daySummary += ` 오늘 마감 업무 ${todayDueTasks}건을 체크해보세요.`;
+
+    html += aiText(daySummary);
+
+    // 요약 카드
+    html += aiCard(`
+      <div class="grid grid-cols-3 gap-3 py-1">
+        <div class="text-center">
+          <p class="text-lg font-bold text-gray-900">${totalSchedules}<span class="text-xs font-medium text-gray-400 ml-0.5">건</span></p>
+          <p class="text-[11px] text-gray-500">일정</p>
+        </div>
+        <div class="text-center">
+          <p class="text-lg font-bold text-gray-900">${totalTasks}<span class="text-xs font-medium text-gray-400 ml-0.5">건</span></p>
+          <p class="text-[11px] text-gray-500">업무</p>
+        </div>
+        <div class="text-center">
+          <p class="text-lg font-bold text-gray-900">${absCount}<span class="text-xs font-medium text-gray-400 ml-0.5">건</span></p>
+          <p class="text-[11px] text-gray-500">퇴근 후 변화</p>
+        </div>
+      </div>
+      ${urgentTasks > 0 ? `<div class="mt-2 py-2 px-3 bg-red-50 rounded-lg"><span class="text-xs font-medium text-red-600">긴급 업무 ${urgentTasks}건 — 오전 집중 시간에 우선 처리 추천</span></div>` : ''}
+    `);
+  }
 
   // ── 일정: 자연어 분석 + 카드 ──
   if (S.length > 0) {
@@ -2055,6 +2755,7 @@ function renderBriefingChat() {
     const m = abs.items.find(i => i.type === 'mention');
     qaItems.push({ label: `${m.from}님 멘션에 답변 초안 작성`, msg: `${m.from}님 멘션 답변 초안 작성해줘` });
   }
+  qaItems.push({ label: '지금 시점으로 다시 브리핑 생성해줘', msg: '지금 시점으로 다시 브리핑 생성해줘' });
   html += renderQuickActions('제가 1번부터 도와드릴까요?', qaItems);
 
   // ── AI 응답 끝 ──
@@ -2257,6 +2958,7 @@ function renderScheduleItemChat(s) {
       { label: `온프레미스 배포 기술 검토 자료 만들어줘`, msg: `${s.company} 온프레미스 배포 기술 검토 자료 작성해줘` },
       { label: `지난 미팅 회의록 분석해줘`, msg: `${s.company} 이전 미팅 회의록 분석해줘` },
       { label: `${internalAttendees[0]}님에게 미팅 리마인드 메시지`, toast: `${internalAttendees[0]}님에게 메시지를 보냅니다` },
+      { label: '지금 시점으로 다시 브리핑 생성해줘', msg: '지금 시점으로 다시 브리핑 생성해줘' },
     ]);
 
   } else {
@@ -2368,6 +3070,7 @@ function renderScheduleItemChat(s) {
     }
     schQa.push({ label: `${s.attendees[0]}님에게 참석 확인 메시지`, toast: `${s.attendees[0]}님에게 메시지를 보냅니다` });
     schQa.push({ label: `"${s.title}" 관련 자료 찾아줘`, msg: `${s.title} 관련 자료 찾아줘` });
+    schQa.push({ label: '지금 시점으로 다시 브리핑 생성해줘', msg: '지금 시점으로 다시 브리핑 생성해줘' });
     html += renderQuickActions('회의 준비를 도와드릴까요?', schQa);
   }
 
@@ -2585,6 +3288,42 @@ function renderWrapUpChat() {
   // 오늘 하루 분석 (가장 먼저)
   html += aiText('---\n\n### 📈 오늘 하루 분석\n\n오늘 **일정 3건** 모두 참석했고, **마감 업무 2건**을 시간 내에 완료했어요. 집중도 높은 하루였어요! 👏');
 
+  // 오늘 하루 분석 요약 카드
+  html += aiCard(`
+    <div class="grid grid-cols-3 gap-3 py-1">
+      <div class="text-center">
+        <p class="text-lg font-bold text-gray-900">3<span class="text-xs font-medium text-gray-400 ml-0.5">건</span></p>
+        <p class="text-[11px] text-green-600 font-medium">모두 참석</p>
+      </div>
+      <div class="text-center">
+        <p class="text-lg font-bold text-gray-900">3<span class="text-xs font-medium text-gray-400 ml-0.5">건</span></p>
+        <p class="text-[11px] text-green-600 font-medium">완료</p>
+      </div>
+      <div class="text-center">
+        <p class="text-lg font-bold text-gray-900">2<span class="text-xs font-medium text-gray-400 ml-0.5">건</span></p>
+        <p class="text-[11px] text-amber-600 font-medium">내일 이월</p>
+      </div>
+    </div>
+  `);
+
+  // 오늘 참석 일정 (간략 체크 형태)
+  const todaySchedules = [
+    { time: '09:30', title: '주간 스탠드업', location: '화상회의' },
+    { time: '11:00', title: '넥스트랩 미팅', location: '본사 3층 회의실' },
+    { time: '16:30', title: '1on1 미팅', location: '화상회의' },
+  ];
+  html += aiText('### 📅 오늘 참석 일정');
+  html += aiCard(todaySchedules.map(s => `
+    <div class="py-2 border-b border-gray-100 last:border-0 flex items-center gap-3">
+      <span class="text-xs font-bold text-gray-400 w-10 flex-shrink-0">${s.time}</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-900">${s.title}</p>
+        <p class="text-[11px] text-gray-400">${s.location}</p>
+      </div>
+      <span class="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full flex-shrink-0">✅ 참석</span>
+    </div>
+  `).join(''));
+
   // 오늘 업무 현황 — 브리핑과 동일한 업무 카드 컴포넌트
   const P = PRIORITY_STYLES;
   const wrapUpTasks = [
@@ -2672,6 +3411,7 @@ function renderWrapUpChat() {
     { label: '이대리님 Q2 기획안 리뷰 답변 초안 작성', msg: '이대리님 Q2 기획안 리뷰 요청 답변 초안 작성해줘' },
     { label: '내일 전체 회의 안건 미리 정리해줘', msg: '내일 전체 회의 안건 미리 정리해줘' },
     { label: '오늘 완료한 업무 요약 메모 작성', msg: '오늘 완료한 업무 요약 메모 작성해줘' },
+    { label: '지금 시점으로 다시 브리핑 생성해줘', msg: '지금 시점으로 다시 브리핑 생성해줘' },
   ]);
 
   html += renderAiResponseEnd();
@@ -2965,7 +3705,7 @@ function renderAiResponseStart(queryHtml) {
     ${queryHtml || ''}
     <div class="flex items-center gap-2 mb-2">
       ${aiAvatar()}
-      <span class="text-sm font-semibold text-gray-900">AI 비서</span>
+      <span class="text-sm font-semibold text-gray-900">${aiName()}</span>
       <span class="text-[11px] text-gray-400">${t}</span>
     </div>
     <div class="ai-response-body streaming" >`;
@@ -3203,7 +3943,7 @@ function sendChatDetailMessage() {
   aiDiv.innerHTML = `
     <div class="flex items-center gap-2 mb-2">
       ${aiAvatar()}
-      <span class="text-sm font-semibold text-gray-900">AI 비서</span>
+      <span class="text-sm font-semibold text-gray-900">${aiName()}</span>
       <span class="text-[11px] text-gray-400">${timeStr}</span>
     </div>
     <div class="ai-response-body" >
@@ -3651,7 +4391,9 @@ function startScenario(type) {
     // invite는 항상 미설정 상태로 시뮬레이션
     state.isCustomized = false;
     localStorage.removeItem('flowai_customized');
+    state.character = null;
     state.personality = null;
+    localStorage.removeItem('flowai_character');
     localStorage.removeItem('flowai_personality');
   }
 
@@ -3748,8 +4490,10 @@ function chatDetailBack() {
 }
 
 function resetAllState() {
+  localStorage.removeItem('flowai_character');
   localStorage.removeItem('flowai_personality');
   localStorage.removeItem('flowai_customized');
+  state.character = null;
   state.personality = null;
   state.isCustomized = false;
   state.readRooms = [];
