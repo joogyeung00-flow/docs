@@ -63,6 +63,17 @@ tailwind.config = {
   .dot-typing span { animation: shimmer 1.5s ease-in-out infinite; }
   .dot-typing span:nth-child(2) { animation-delay: 0.2s; }
   .dot-typing span:nth-child(3) { animation-delay: 0.4s; }
+  /* 스켈레톤 시머 (브리핑 재생성 시) */
+  @keyframes skeletonShimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .skeleton-shimmer {
+    background-image: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.7) 50%, rgba(0,0,0,0) 100%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: skeletonShimmer 1.4s ease-in-out infinite;
+  }
   input:focus { outline:none; }
   .chat-area::-webkit-scrollbar { width:4px; }
   .chat-area::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:9999px; }
@@ -204,6 +215,15 @@ tailwind.config = {
   .ai-response-body hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
   .ai-response-body code { background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.85em; color: #5B40F8; }
 
+  /* AI 응답 — 표 (맞춤 브리핑·통계 요약 등) */
+  .ai-response-body table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 13px; display: block; overflow-x: auto; white-space: nowrap; }
+  .ai-response-body table th, .ai-response-body table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; white-space: normal; }
+  .ai-response-body table th { font-weight: 700; color: #475569; background: #f8fafc; font-size: 12px; letter-spacing: 0.01em; }
+  .ai-response-body table tbody tr:hover { background: #fafafa; }
+
+  /* AI 응답 — 인라인 출처 chip */
+  .ai-response-body .cite { display: inline-block; background: #f1f5f9; color: #64748b; padding: 1px 7px; border-radius: 5px; font-size: 11px; margin: 0 2px; vertical-align: middle; font-weight: 500; line-height: 1.6; }
+
   /* AI 카드 위젯 (인터랙티브 요소) */
   .ai-card-widget { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
   .ai-card-widget:hover { border-color: #cbd5e1; }
@@ -239,6 +259,27 @@ tailwind.config = {
   <div id="toastAction" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-[10010] px-4 py-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 pointer-events-none transition-opacity duration-150 flex items-center gap-3" style="max-width:340px">
     <span id="toastActionMsg" class="flex-1"></span>
     <button id="toastActionBtn" class="text-[13px] font-semibold text-brand-300 hover:text-brand-200 whitespace-nowrap"></button>
+  </div>
+
+  <!-- ===== 오늘 브리핑 대기 시트 (PRD §5-2-A) ===== -->
+  <div id="pendingSheetOverlay" onclick="closePendingBriefingsSheet()"
+    class="absolute inset-0 z-[9000] bg-black/40 opacity-0 pointer-events-none transition-opacity duration-200"></div>
+  <div id="pendingSheet" onclick="event.stopPropagation()"
+    class="absolute bottom-0 left-0 right-0 z-[9001] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300"
+    style="transform: translateY(100%); max-height: 70%;">
+    <div class="flex flex-col h-full">
+      <!-- 헤더 -->
+      <div class="flex items-start justify-between px-4 pt-4 pb-3 border-b border-gray-100">
+        <h3 id="pendingSheetTitle" class="text-[14px] font-bold text-gray-900 flex-1">오늘 남은 브리핑</h3>
+        <button onclick="closePendingBriefingsSheet()"
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 ml-2" title="닫기">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- 본문 -->
+      <div id="pendingSheetBody" class="flex-1 overflow-y-auto px-3 py-3" style="max-height:calc(70vh - 56px)">
+      </div>
+    </div>
   </div>
 
   <!-- ===== SCR-SCENARIO: 시나리오 선택 (시간대별 타임라인) ===== -->
@@ -2003,6 +2044,9 @@ const state = {
     'cb-002': 'generating',
     'wrapup': { status: 'failed', reason: '일시적인 오류가 발생했어요' },
   },
+  // 오늘 브리핑 대기 시트 — 사용자가 적용한 변경사항 (BriefingScheduleItem 정합)
+  pendingBriefingTimeChanges: {},  // { [pendingId]: scheduledMin (시간 변경된 새 발송 분) }
+  pendingBriefingSkipped: [],      // [pendingId, ...] — 오늘 해제한 항목 ID 목록
 };
 
 // ─── Dummy Data ───────────────────────────────────────
@@ -2054,6 +2098,34 @@ const BRIEFING = {
   attention: [
     { id:'att-002', type:'mention', title:'Q2 기획안 리뷰 요청 멘션', author:'이대리', timeAgo:'어제', path:['FlowAI 마케팅','Q2 캠페인'] },
   ],
+};
+
+// ─── 오늘 브리핑 대기 (BriefingScheduleItem 정합) ──────
+// data spec §2-12 / PRD §5-2-A
+// scheduledMin: 분 단위 (00:00 = 0). 시나리오 시계 기준 미래 항목만 시트에 노출.
+// title: 카드 타이틀로 prominent 노출. typeLabel: 우측 상단 chip.
+const BRIEFING_PENDING = [
+  { id: 'pb-morning', type: 'morning', scheduledMin: 8*60,
+    title: '오전 브리핑', typeLabel: '오전', subtitle: '오늘 일정·업무·놓친 변화 요약' },
+  { id: 'pb-sch-002', type: 'schedule', scheduledMin: 13*60+30,
+    title: '스프린트 리뷰', typeLabel: '일정',
+    scheduleStartMin: 14*60, subtitle: '14:00 시작 · 사전 알림',
+    contextLine: '김팀장 외 7명 · 본사 3층 회의실' },
+  { id: 'pb-sch-003', type: 'schedule', scheduledMin: 16*60,
+    title: '1on1 - 김팀장', typeLabel: '일정',
+    scheduleStartMin: 16*60+30, subtitle: '16:30 시작 · 사전 알림',
+    contextLine: '김팀장 · 팀장실' },
+  { id: 'pb-cb-001', type: 'custom', scheduledMin: 17*60,
+    title: '주간 PM 리포트', typeLabel: '맞춤', subtitle: '매주 목요일 17:00 발송' },
+  { id: 'pb-wrapup', type: 'wrapup', scheduledMin: 19*60,
+    title: '퇴근 브리핑', typeLabel: '퇴근', subtitle: '오늘 처리한 일·내일 준비할 일 정리' },
+];
+
+const BRIEFING_PENDING_TYPE_STYLES = {
+  morning: { bg: 'bg-amber-50',  text: 'text-amber-700',  icon: '🌅' },
+  schedule:{ bg: 'bg-sky-50',    text: 'text-sky-700',    icon: '📅' },
+  custom:  { bg: 'bg-purple-50', text: 'text-purple-700', icon: '✨' },
+  wrapup:  { bg: 'bg-indigo-50', text: 'text-indigo-700', icon: '🌙' },
 };
 
 const BRIEFING_CTA = {
@@ -2196,14 +2268,8 @@ const CUSTOM_BRIEFING_OUTPUTS = {
   },
 };
 
-// ─── 리마인더 데이터 (PRD 4-3 기반) ──────────────────
-const REMINDERS = [
-  { id:'rem-001', type:'deadline', label:'📌 마감 당일 업무 알림', title:'Q2 마케팅 보고서 초안', status:'요청', due:'오늘 마감', time:'09:30', path:['FlowAI 마케팅','Q2 캠페인'] },
-  { id:'rem-002', type:'schedule', label:'📅 일정 시작 30분 전', title:'스프린트 리뷰', time:'13:30', location:'본사 3층 회의실', attendees:8 },
-  { id:'rem-005', type:'schedule', label:'📅 일정 시작 30분 전', title:'넥스트랩 AI 솔루션 도입 미팅', time:'10:30', location:'본사 5층 대회의실', attendees:5, chatTarget:'sch-004' },
-  { id:'rem-003', type:'deadline', label:'📌 마감 D-1 업무 알림', title:'PRD 작성', status:'진행중', due:'내일 마감', time:'14:00', path:['FlowAI QA 🔧','스마트비서 기획'] },
-  { id:'rem-004', type:'noreply', label:'💬 미회신 알림', title:'Q2 기획안 리뷰 요청', from:'이대리', elapsed:'24시간 경과', time:'10:00', path:['FlowAI 마케팅','Q2 캠페인'] },
-];
+// (제거됨 v1.5) const REMINDERS — PRD §5-4 일정 브리핑의 별도 리마인더 데이터.
+// §5-2-A 오늘 브리핑 대기 시트(BRIEFING_PENDING)로 일원화되어 dead data 정리.
 
 const PRIORITY_STYLES = {
   URGENT: { icon:'🚨', bg:'bg-red-50', text:'text-red-600', border:'border-red-200', label:'긴급' },
@@ -3623,6 +3689,9 @@ function renderAssistantHome() {
         <p class="text-[13px] text-gray-500 mt-1.5 leading-relaxed">${greetings}</p>
       </div>`;
 
+  // ── 오늘 브리핑 대기 인디케이터 (PRD §5-2-A) ──
+  html += renderPendingBriefingIndicator();
+
   // ── 새 알림 카드 ──
   if (newRooms.length > 0) {
     html += `<div class="relative px-4 pt-3 pb-4 space-y-3">`;
@@ -3659,23 +3728,7 @@ function renderNewCard(room, index) {
   let clickHandler = `onclick="openNotificationChat('${room.id}')"`;
   let cursorClass = '';
 
-  if (status === 'generating') {
-    statusChip = `
-      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">
-        <svg class="w-2.5 h-2.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        생성 중
-      </span>`;
-    previewText = 'AI가 내용을 정리하고 있어요';
-    previewClass = 'text-xs text-gray-400 mt-1';
-    footer = `
-      <div class="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center gap-1.5">
-        <svg class="w-3 h-3 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        <span class="text-[11px] text-gray-500 font-medium">잠시만 기다려 주세요</span>
-      </div>`;
-    cardBorder = 'border-gray-100';
-    clickHandler = '';
-    cursorClass = 'cursor-default';
-  } else if (status === 'failed') {
+  if (status === 'failed') {
     statusChip = `
       <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-600">
         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
@@ -3812,6 +3865,9 @@ function openNotificationChat(notifId) {
   if (!state.readRooms.includes(notifId)) {
     state.readRooms.push(notifId);
   }
+
+  // 현재 채팅 컨텍스트 저장 (퀵액션 재생성 등에서 사용)
+  state.currentNotifChat = notifId;
 
   area.innerHTML = chatHtml;
   injectBubbleTimes(area);
@@ -3978,65 +4034,85 @@ function renderCustomSectionsForPlacement(placement) {
   return items.map(item => renderCustomBriefingSection(item)).join('');
 }
 
+// 맞춤 브리핑은 카드 위젯 없이 일반 AI 대화 응답 스타일(마크다운 본문)로만 렌더링.
+// PRD §5-7-1 / §5-X 정합 — 고정 데이터 카드 렌더 후 가변층 코멘트만 LLM이 만드는 정기 브리핑(M/W)과 달리,
+// 맞춤 브리핑은 단일 마크다운 본문으로 응답 (04-llm-api-spec §9-A-3 final.markdown).
+// 풍부한 일반 AI 대화 형태: 리드 단락 + 표 + 서브 불릿 + 출처 chip + 👉 인사이트.
 function renderCustomBriefingSection(item) {
   const it = item.interpreted;
   const output = CUSTOM_BRIEFING_OUTPUTS[item.id];
   if (!output) return '';
 
-  let bodyHtml = '';
+  const cite = (label) => `<span class="cite">${label}</span>`;
+  const lines = [];
+
   if (it.outputType === 'news' && output.articles) {
-    bodyHtml = output.articles.map(a => {
-      const toneStyle = a.tone === '긍정' ? 'bg-green-50 text-green-600'
-        : a.tone === '부정' ? 'bg-red-50 text-red-600'
-        : 'bg-gray-50 text-gray-500';
-      return `
-        <div onclick="showToast('${a.source} 기사로 이동합니다')" class="py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
-          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-            <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-600">${a.source}</span>
-            <span class="text-[10px] text-gray-400">${a.date}</span>
-            <span class="inline-flex px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${toneStyle}">${a.tone}</span>
-          </div>
-          <p class="text-sm font-medium text-gray-900 leading-snug">${a.title}</p>
-          <p class="text-xs text-gray-500 mt-0.5 leading-snug">${a.summary}</p>
-        </div>`;
-    }).join('');
+    lines.push(`${output.summary}`);
+    lines.push('');
+    lines.push(`### 📰 ${it.title}`);
+    lines.push('');
+    lines.push('| 매체 | 발행 시점 | 톤 | 헤드라인 |');
+    lines.push('|------|---------|-----|---------|');
+    output.articles.forEach(a => {
+      lines.push(`| ${a.source} | ${a.date} | ${a.tone} | ${a.title} |`);
+    });
+    lines.push('');
+    lines.push('**기사별 핵심**');
+    lines.push('');
+    output.articles.forEach(a => {
+      lines.push(`- **${a.title}** ${cite(`${a.source} ${a.date}`)} — ${a.summary}`);
+    });
+    lines.push('');
+    lines.push('---');
+    const positive = output.articles.filter(a => a.tone === '긍정').length;
+    const neutral  = output.articles.filter(a => a.tone === '중립').length;
+    const negative = output.articles.filter(a => a.tone === '부정').length;
+    lines.push(`👉 **오늘의 흐름**: 긍정 **${positive}건** · 중립 **${neutral}건** · 부정 **${negative}건**. 매체 보도 톤을 종합하면 시장 포지셔닝을 우호적으로 다루는 흐름이 우세해요.`);
+
   } else if (it.outputType === 'competitor' && output.updates) {
-    bodyHtml = output.updates.map(u => {
-      const impactStyle = u.impact === 'high' ? 'bg-red-50 text-red-600'
-        : u.impact === 'medium' ? 'bg-amber-50 text-amber-600'
-        : 'bg-gray-50 text-gray-500';
-      const impactLabel = u.impact === 'high' ? '🔥 영향 높음' : u.impact === 'medium' ? '⚡ 영향 보통' : '💭 참고';
-      return `
-        <div onclick="showToast('${u.product} 원문으로 이동합니다')" class="py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
-          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-            <span class="inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-600">${u.product}</span>
-            <span class="text-[10px] text-gray-400">${u.date}</span>
-            <span class="inline-flex px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${impactStyle}">${impactLabel}</span>
-          </div>
-          <p class="text-sm font-medium text-gray-900 leading-snug">${u.title}</p>
-          <p class="text-xs text-gray-500 mt-0.5 leading-snug">${u.summary}</p>
-        </div>`;
-    }).join('');
+    const impactLabel = imp =>
+      imp === 'high' ? '🔥 영향 높음' : imp === 'medium' ? '⚡ 영향 보통' : '💭 참고';
+    lines.push(`${output.summary}`);
+    lines.push('');
+    lines.push(`### 🧭 ${it.title}`);
+    lines.push('');
+    lines.push('| 제품 | 발표일 | 영향도 | 업데이트 |');
+    lines.push('|------|------|------|---------|');
+    output.updates.forEach(u => {
+      lines.push(`| ${u.product} | ${u.date} | ${impactLabel(u.impact)} | ${u.title} |`);
+    });
+    lines.push('');
+    lines.push('**상세**');
+    lines.push('');
+    output.updates.forEach(u => {
+      lines.push(`- **${u.title}** ${cite(`${u.product} ${u.date}`)} — ${u.summary}`);
+    });
+    lines.push('');
+    lines.push('---');
+    const high = output.updates.filter(u => u.impact === 'high');
+    const focusLine = high.length > 0
+      ? `👉 **시사점**: 영향 높음 항목 **${high.length}건**(${high.map(u => `"${u.title}"`).join(', ')})에 대해 우리 로드맵 검토가 필요해 보여요.`
+      : `👉 **시사점**: 단기 위협 신호는 낮지만 트렌드 모니터링은 계속 이어가는 게 좋겠어요.`;
+    lines.push(focusLine);
+
   } else if (it.outputType === 'trends' && output.trends) {
-    bodyHtml = output.trends.map(t => `
-      <div class="py-2.5 border-b border-gray-100 last:border-0">
-        <div class="flex items-start gap-2.5">
-          <div class="w-5 h-5 rounded-full bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">${t.rank}</div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-gray-900 leading-snug">${t.title}</p>
-            <p class="text-xs text-gray-500 mt-0.5 leading-snug">${t.summary}</p>
-            <p class="text-[11px] text-brand-600 mt-1 leading-snug">💡 ${t.insight}</p>
-          </div>
-        </div>
-      </div>`).join('');
+    lines.push(`${output.summary}`);
+    lines.push('');
+    lines.push(`### 🔥 ${it.title}`);
+    lines.push('');
+    output.trends.forEach(t => {
+      lines.push(`**${t.rank}. ${t.title}**`);
+      lines.push('');
+      lines.push(`${t.summary} ${cite(`업계 동향 '26.04`)}`);
+      lines.push('');
+      lines.push(`👉 ${t.insight}`);
+      lines.push('');
+    });
   }
 
-  return `
-    <div class="mt-4">
-      ${aiText(`### ${it.title}`)}
-      ${aiCard(bodyHtml)}
-      ${aiText(`${output.summary}\n\n<span class="custom-briefing-badge-marker"></span>`)}
-    </div>`;
+  lines.push('<span class="custom-briefing-badge-marker"></span>');
+
+  return `<div class="mt-4">${aiText(lines.join('\n'))}</div>`;
 }
 
 // 단독 브리핑 전체 채팅 렌더러
@@ -5254,6 +5330,12 @@ function handleQuickAction(qaId, idx, btn) {
     btn.classList.add('selected');
   }
 
+  // "지금 시점으로 다시 브리핑 생성해줘" → 스켈레톤 스트리밍 흐름
+  if (a.msg && /지금 시점으로 다시 브리핑/.test(a.msg)) {
+    streamRegeneratedBriefing(a.msg);
+    return;
+  }
+
   if (a.msg) {
     const input = document.getElementById('chatDetailInput');
     if (input) { input.value = a.msg; }
@@ -5261,6 +5343,100 @@ function handleQuickAction(qaId, idx, btn) {
   } else if (a.toast) {
     showToast(a.toast);
   }
+}
+
+// ── 브리핑 재생성: 사용자 메시지 → 스켈레톤 → 섹션별 스트리밍 ──
+function streamRegeneratedBriefing(userMsg) {
+  const area = document.getElementById('chatDetailArea');
+  if (!area) return;
+
+  const notifId = state.currentNotifChat;
+  const timeStr = getScenarioBubbleTime();
+
+  // 1) 사용자 메시지 말풍선
+  const userDiv = document.createElement('div');
+  userDiv.className = 'flex justify-end items-end gap-1.5 animate-fade-in px-5 mt-4';
+  userDiv.innerHTML = `
+    <span class="text-[10px] text-gray-400 pb-1 flex-shrink-0">${timeStr}</span>
+    <div style="background:#e9e5ff" class="px-4 py-2.5 rounded-lg rounded-tr-md text-sm text-gray-900 max-w-[80%]">${userMsg}</div>`;
+  area.appendChild(userDiv);
+  area.scrollTop = area.scrollHeight;
+
+  // 2) 스켈레톤 응답 (생성 중 상태)
+  const skeletonId = 'regen-' + Date.now();
+  const skeletonDiv = document.createElement('div');
+  skeletonDiv.id = skeletonId;
+  skeletonDiv.className = 'ai-response animate-fade-in mt-4';
+  skeletonDiv.innerHTML = `
+    <div class="flex items-center gap-2 mb-2">
+      ${aiAvatar()}
+      <span class="text-sm font-semibold text-gray-900">${aiName()}</span>
+      <span class="text-[11px] text-gray-400">${timeStr}</span>
+    </div>
+    <div class="ai-response-body">
+      <div class="briefing-skeleton space-y-5 py-2">
+        <div class="flex items-center gap-1.5">
+          <span class="dot-typing flex gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 inline-block"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 inline-block"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 inline-block"></span>
+          </span>
+          <span class="text-[11px] text-gray-400">지금 시점의 정보를 모으고 있어요</span>
+        </div>
+        ${[0,1,2].map(() => `
+          <div class="space-y-2.5">
+            <div class="h-4 bg-gray-200 rounded skeleton-shimmer w-2/5"></div>
+            <div class="h-24 bg-gray-100 rounded-lg border border-gray-100 skeleton-shimmer"></div>
+            <div class="space-y-1.5 pt-1">
+              <div class="h-3 bg-gray-200 rounded skeleton-shimmer w-full"></div>
+              <div class="h-3 bg-gray-200 rounded skeleton-shimmer w-11/12"></div>
+              <div class="h-3 bg-gray-200 rounded skeleton-shimmer w-3/5"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  area.appendChild(skeletonDiv);
+  area.scrollTop = area.scrollHeight;
+
+  // 3) 1.4초 후 실제 응답 HTML로 교체 + 섹션별 스트리밍 시작
+  setTimeout(() => {
+    let chatHtml = '';
+    if (notifId === 'briefing') chatHtml = renderBriefingChat();
+    else if (notifId === 'wrapup') chatHtml = renderWrapUpChat();
+    else if (notifId && notifId.startsWith('sch-')) {
+      const schedule = BRIEFING.schedules.find(s => s.id === notifId);
+      if (schedule) chatHtml = renderScheduleItemChat(schedule);
+    } else if (notifId && notifId.startsWith('cb-')) {
+      chatHtml = renderStandaloneCustomChat(notifId);
+    }
+
+    if (!chatHtml) {
+      skeletonDiv.remove();
+      return;
+    }
+
+    // 응답 HTML을 임시 컨테이너에 파싱
+    const tmp = document.createElement('div');
+    tmp.innerHTML = chatHtml;
+    const newResponse = tmp.querySelector('.ai-response');
+    if (!newResponse) { skeletonDiv.remove(); return; }
+
+    // 스켈레톤 자리에 실제 응답 삽입
+    skeletonDiv.replaceWith(newResponse);
+    newResponse.classList.add('animate-fade-in');
+    newResponse.style.opacity = '1';
+    newResponse.style.transform = 'translateY(0)';
+
+    // 검색/조회 블록 즉시 펼친 상태로 표시
+    newResponse.querySelectorAll('.flow-query-block').forEach(b => b.classList.add('fq-revealed'));
+    newResponse.querySelectorAll('.fq-step').forEach(s => s.classList.add('fq-step-revealed'));
+
+    // 섹션별 스트리밍 시작
+    streamAiResponse(newResponse, area, () => {
+      area.scrollTop = area.scrollHeight;
+    });
+  }, 1400);
 }
 
 // ── marked.js 설정 ──
@@ -5459,27 +5635,34 @@ function revealBubblesSequentially(area) {
 }
 
 // ── AI 응답 스트리밍 애니메이션 ──
-function streamAiResponse(responseEl, scrollArea) {
+function streamAiResponse(responseEl, scrollArea, onComplete) {
   try {
     const body = responseEl.querySelector('.ai-response-body');
-    if (!body) return;
+    if (!body) { if (typeof onComplete === 'function') onComplete(); return; }
 
     const children = Array.from(body.children);
-    if (children.length === 0) { body.classList.remove('streaming'); return; }
+    if (children.length === 0) {
+      body.classList.remove('streaming');
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
 
     let idx = 0;
     const INTERVAL_BASE = 120;
     const CARD_DELAY = 300;
+    const HEADING_DELAY = 200;
 
     function revealNext() {
       if (idx >= children.length) {
         body.classList.remove('streaming');
+        if (typeof onComplete === 'function') onComplete();
         return;
       }
       const child = children[idx];
       const isCard = child.classList.contains('ai-card-widget');
       const isSuggest = child.classList.contains('ai-suggest-section');
       const isFeedback = child.classList.contains('ai-feedback');
+      const isHeading = child.tagName === 'H3' || child.tagName === 'H4';
 
       child.classList.add('streamed');
 
@@ -5488,7 +5671,12 @@ function streamAiResponse(responseEl, scrollArea) {
       });
 
       idx++;
-      const nextDelay = isCard ? CARD_DELAY : isSuggest ? CARD_DELAY : isFeedback ? 200 : INTERVAL_BASE;
+      // 헤딩(섹션 타이틀) 다음엔 카드가 오므로 약간 더 텀을 둠 / 카드 다음엔 자연어 분석 텀
+      const nextDelay = isCard ? CARD_DELAY
+        : isSuggest ? CARD_DELAY
+        : isFeedback ? 200
+        : isHeading ? HEADING_DELAY
+        : INTERVAL_BASE;
       setTimeout(revealNext, nextDelay);
     }
 
@@ -5497,6 +5685,7 @@ function streamAiResponse(responseEl, scrollArea) {
     // 에러 시 스트리밍 해제 → 콘텐츠 즉시 표시
     const body = responseEl.querySelector('.ai-response-body');
     if (body) body.classList.remove('streaming');
+    if (typeof onComplete === 'function') onComplete();
   }
 }
 
@@ -5573,36 +5762,8 @@ function enterAssistant() {
 }
 
 
-function toggleSnooze(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('hidden');
-}
-
-function snoozeReminder(id, option) {
-  const r = REMINDERS.find(r => r.id === id);
-  if (r) showToast('⏰ "' + r.title + '" ' + option + ' 다시 알림');
-  document.getElementById('snooze-' + id).classList.add('hidden');
-}
-
-function dismissReminder(id) {
-  const idx = REMINDERS.findIndex(r => r.id === id);
-  if (idx !== -1) {
-    const el = document.getElementById('snooze-' + id);
-    if (el) el.closest('.animate-fade-in').remove();
-    showToast('"' + REMINDERS[idx].title + '" 리마인더 해제됨');
-    REMINDERS.splice(idx, 1);
-  }
-}
-
-function completeReminder(id) {
-  const idx = REMINDERS.findIndex(r => r.id === id);
-  if (idx !== -1) {
-    const el = document.getElementById('snooze-' + id);
-    if (el) el.closest('.animate-fade-in').remove();
-    showToast('✅ "' + REMINDERS[idx].title + '" 완료 처리');
-    REMINDERS.splice(idx, 1);
-  }
-}
+// (제거됨 v1.5) toggleSnooze / snoozeReminder / dismissReminder / completeReminder —
+// PRD §5-4 일정 브리핑의 별도 스누즈/해제 액션 함수들. §5-2-A 오늘 브리핑 대기 시트로 일원화되어 dead code 정리.
 
 function handleAction(id, type) {
   const cta = BRIEFING_CTA[id];
@@ -5897,7 +6058,7 @@ const BRIEFING_ITEM_DEFAULTS = {
   'morning:tasksAssigned':  { projects: 'all', statuses: ['waiting','in_progress'], window: 'd3' },
   'morning:tasksRequested': { projects: 'all', statuses: ['waiting','in_progress'], window: 'd3', assignees: 'all' },
   'morning:overdue':        { projects: 'all', target: 'assigned', delay: 'd1' },
-  'morning:afterWork':      { projects: 'all', calendars: 'all', types: ['comment','post','schedule','task'] },
+  'morning:afterWork':      { projects: 'all', types: ['comment','post','task'] },
   'wrapup:attended':        { calendars: 'all', attendance: 'attended_only' },
   'wrapup:taskStatus':      { projects: 'all', scope: ['assigned','requested'], statuses: ['in_progress','completed'] },
   'wrapup:tomorrow':        { calendars: 'all', attendance: 'all' },
@@ -5995,11 +6156,9 @@ const FIELD_SCHEMAS = {
   ],
   'morning:afterWork': [
     { key: 'projects', label: '프로젝트 범위', type: 'multi-select', source: 'projects' },
-    { key: 'calendars', label: '캘린더 범위', type: 'multi-select', source: 'calendars' },
     { key: 'types', label: '변경 사항', type: 'checkbox', options: [
       { value: 'comment', label: '댓글' },
       { value: 'post', label: '게시글 변경' },
-      { value: 'schedule', label: '일정 변경' },
       { value: 'task', label: '업무 상태 변경' },
     ]},
   ],
@@ -7033,6 +7192,246 @@ function showToast(msg) {
     toast.classList.remove('opacity-100');
     toast.classList.add('opacity-0','pointer-events-none');
   }, 2000);
+}
+
+// ─── 오늘 브리핑 대기 시트 (PRD §5-2-A / data spec §2-12) ──────────────────
+
+function _scenarioNowMin() {
+  const sc = state.currentScenario;
+  if (sc && sc !== 'sidebar' && SCENARIO_DATA[sc]) return SCENARIO_DATA[sc].sortMin;
+  return 0; // 시나리오 없으면 자정 기준 (모두 미래로 간주)
+}
+
+function _minToHHMM(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function _relativeFromNow(targetMin, nowMin) {
+  const diff = targetMin - nowMin;
+  if (diff <= 0) return '곧';
+  if (diff < 60) return `${diff}분 후`;
+  const h = Math.floor(diff / 60), m = diff % 60;
+  return m === 0 ? `${h}시간 후` : `${h}시간 ${m}분 후`;
+}
+
+function _resolvePendingItem(p) {
+  const changedTo = state.pendingBriefingTimeChanges[p.id];
+  let scheduledMin = p.scheduledMin;
+  let isTimeChanged = false;
+  if (changedTo != null) {
+    scheduledMin = changedTo;
+    isTimeChanged = true;
+  }
+  return { ...p, scheduledMin, isTimeChanged, originalMin: p.scheduledMin };
+}
+
+function _getActivePendingBriefings() {
+  const nowMin = _scenarioNowMin();
+  return BRIEFING_PENDING
+    .filter(p => !state.pendingBriefingSkipped.includes(p.id))
+    .map(_resolvePendingItem)
+    .filter(p => p.scheduledMin > nowMin)
+    .sort((a, b) => a.scheduledMin - b.scheduledMin);
+}
+
+function getPendingBriefingCount() {
+  return _getActivePendingBriefings().length;
+}
+
+function renderPendingBriefingIndicator() {
+  const count = getPendingBriefingCount();
+  if (count === 0) {
+    return `
+      <div class="relative px-4 mt-2 mb-1">
+        <button type="button" disabled
+          class="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-gray-50 text-gray-400 text-[12px]">
+          <span>📬</span>
+          <span class="flex-1 text-left">오늘 예정된 브리핑이 모두 도착했어요</span>
+        </button>
+      </div>`;
+  }
+  return `
+    <div class="relative px-4 mt-2 mb-1">
+      <button type="button" onclick="openPendingBriefingsSheet()"
+        class="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-brand-50 text-brand-700 text-[12px] font-medium hover:bg-brand-100 transition-colors">
+        <span>📬</span>
+        <span class="flex-1 text-left">오늘 남은 브리핑 <span class="font-bold">${count}건</span></span>
+        <span class="text-brand-400">›</span>
+      </button>
+    </div>`;
+}
+
+function openPendingBriefingsSheet() {
+  const overlay = document.getElementById('pendingSheetOverlay');
+  const sheet = document.getElementById('pendingSheet');
+  if (!overlay || !sheet) return;
+  renderPendingBriefingsSheet();
+  overlay.classList.remove('opacity-0','pointer-events-none');
+  overlay.classList.add('opacity-100');
+  sheet.style.transform = 'translateY(0)';
+}
+
+function closePendingBriefingsSheet() {
+  const overlay = document.getElementById('pendingSheetOverlay');
+  const sheet = document.getElementById('pendingSheet');
+  if (!overlay || !sheet) return;
+  overlay.classList.remove('opacity-100');
+  overlay.classList.add('opacity-0','pointer-events-none');
+  sheet.style.transform = 'translateY(100%)';
+  // 닫힘 후 홈 인디케이터 N 갱신
+  if (typeof renderHomeNotifs === 'function') renderHomeNotifs();
+}
+
+function renderPendingBriefingsSheet() {
+  const items = _getActivePendingBriefings();
+  const nowMin = _scenarioNowMin();
+  const titleEl = document.getElementById('pendingSheetTitle');
+  const bodyEl = document.getElementById('pendingSheetBody');
+  if (!titleEl || !bodyEl) return;
+
+  if (items.length === 0) {
+    titleEl.textContent = '오늘 남은 브리핑';
+    bodyEl.innerHTML = `
+      <div class="py-12 text-center">
+        <p class="text-[13px] text-gray-500">오늘 예정된 브리핑이 모두 도착했어요</p>
+        <button type="button" onclick="closePendingBriefingsSheet(); showToast('비서 설정으로 이동')"
+          class="mt-3 text-[12px] text-brand-600 underline">비서 설정에서 브리핑 추가하기</button>
+      </div>`;
+    return;
+  }
+
+  titleEl.innerHTML = `오늘 남은 브리핑 <span class="text-gray-400 font-normal text-[13px]">· ${items.length}건</span>`;
+
+  bodyEl.innerHTML = items.map(item => _renderPendingItemCard(item, nowMin)).join('');
+}
+
+function _renderPendingItemCard(item, nowMin) {
+  const timeStr = _minToHHMM(item.scheduledMin);
+  const relStr = _relativeFromNow(item.scheduledMin, nowMin);
+  const style = BRIEFING_PENDING_TYPE_STYLES[item.type] || BRIEFING_PENDING_TYPE_STYLES.morning;
+
+  const typeChip = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${style.bg} ${style.text} text-[10px] font-medium">${style.icon} ${item.typeLabel}</span>`;
+  const changedBadge = item.isTimeChanged
+    ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px] font-medium">🕐 시간 변경됨 · 원래 ${_minToHHMM(item.originalMin)}</span>`
+    : '';
+  const subtitleLine = item.subtitle
+    ? `<p class="text-[11px] text-gray-500 mt-0.5">${item.subtitle}</p>`
+    : '';
+  const contextLine = item.contextLine
+    ? `<p class="text-[11px] text-gray-500 mt-0.5">${item.contextLine}</p>`
+    : '';
+
+  return `
+    <div class="border border-gray-200 rounded-xl p-3 mb-2 bg-white">
+      <!-- 상단: 시각 + 타입 chip -->
+      <div class="flex items-center justify-between gap-2 mb-1.5">
+        <div class="flex items-center gap-1.5 text-[12px] text-gray-700">
+          <span class="font-semibold">⏰ ${timeStr}</span>
+          <span class="text-gray-400">· ${relStr}</span>
+        </div>
+        ${typeChip}
+      </div>
+      <!-- 타이틀 (prominent) -->
+      <p class="text-[15px] font-bold text-gray-900 leading-tight">${item.title}</p>
+      ${subtitleLine}
+      ${contextLine}
+      ${item.isTimeChanged ? `<div class="mt-2">${changedBadge}</div>` : ''}
+      <!-- 액션 -->
+      <div class="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-gray-100">
+        <div class="relative flex-1">
+          <button type="button" onclick="togglePendingTimeChangeMenu('${item.id}', this)"
+            class="w-full flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50 text-[12px] text-gray-700 transition-colors">
+            🕐 시간 변경 <span class="text-gray-400">▾</span>
+          </button>
+          <div id="time-change-menu-${item.id}" class="hidden absolute bottom-full left-0 right-0 mb-1 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1">
+            <div class="px-3 py-1 text-[10px] text-gray-400 border-b border-gray-100">현재 발송 시각에서</div>
+            <button type="button" onclick="applyPendingTimeChange('${item.id}', 15)" class="w-full text-left px-3 py-1.5 text-[12px] hover:bg-gray-50">+15분</button>
+            <button type="button" onclick="applyPendingTimeChange('${item.id}', 30)" class="w-full text-left px-3 py-1.5 text-[12px] hover:bg-gray-50">+30분</button>
+            <button type="button" onclick="applyPendingTimeChange('${item.id}', 60)" class="w-full text-left px-3 py-1.5 text-[12px] hover:bg-gray-50">+1시간</button>
+            <button type="button" onclick="applyPendingTimeChangeCustom('${item.id}')" class="w-full text-left px-3 py-1.5 text-[12px] hover:bg-gray-50 border-t border-gray-100">직접 시간 선택…</button>
+          </div>
+        </div>
+        <button type="button" onclick="confirmPendingSkip('${item.id}', '${item.title}')"
+          class="flex-1 px-2.5 py-1.5 rounded-md border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-[12px] text-gray-700 transition-colors">
+          오늘 해제
+        </button>
+      </div>
+    </div>`;
+}
+
+function togglePendingTimeChangeMenu(itemId, btn) {
+  // 다른 메뉴 모두 닫기
+  document.querySelectorAll('[id^="time-change-menu-"]').forEach(el => {
+    if (el.id !== `time-change-menu-${itemId}`) el.classList.add('hidden');
+  });
+  const menu = document.getElementById(`time-change-menu-${itemId}`);
+  if (menu) menu.classList.toggle('hidden');
+}
+
+// 데이터 수집 버퍼 (분) — PRD §5-3 정합. 발송 30분 전부터 데이터 수집 시작이라
+// 새 발송 시각은 "현재 시각 + 30분" 이후여야 함.
+const BRIEFING_LEAD_TIME_MIN = 30;
+
+function _validatePendingTimeChange(item, newMin) {
+  const nowMin = _scenarioNowMin();
+  // 제약 1: 데이터 수집 버퍼 (현재 시각 + 30분 이후만 허용)
+  if (newMin < nowMin + BRIEFING_LEAD_TIME_MIN) {
+    return { ok: false, msg: `브리핑 생성에 30분이 필요해요. ${_minToHHMM(nowMin + BRIEFING_LEAD_TIME_MIN)} 이후로 변경해주세요` };
+  }
+  // 제약 2: 같은 날 23:59 초과 금지
+  if (newMin > 23*60 + 59) {
+    return { ok: false, msg: '같은 날 안에서만 변경할 수 있어요' };
+  }
+  // 제약 3: 일정 브리핑은 일정 시작 시각 초과 금지
+  if (item.type === 'schedule' && item.scheduleStartMin != null && newMin >= item.scheduleStartMin) {
+    return { ok: false, msg: '일정 시작 시간 이후로는 변경할 수 없어요' };
+  }
+  return { ok: true };
+}
+
+function applyPendingTimeChange(itemId, offsetMin) {
+  const item = BRIEFING_PENDING.find(p => p.id === itemId);
+  if (!item) return;
+  const resolved = _resolvePendingItem(item);
+  const newMin = resolved.scheduledMin + offsetMin;
+
+  const v = _validatePendingTimeChange(item, newMin);
+  if (!v.ok) { showToast(v.msg); return; }
+
+  state.pendingBriefingTimeChanges[itemId] = newMin;
+  document.getElementById(`time-change-menu-${itemId}`)?.classList.add('hidden');
+  renderPendingBriefingsSheet();
+  showToast(`${_minToHHMM(newMin)}으로 변경했어요`);
+}
+
+function applyPendingTimeChangeCustom(itemId) {
+  const item = BRIEFING_PENDING.find(p => p.id === itemId);
+  if (!item) return;
+  const resolved = _resolvePendingItem(item);
+  const currentHHMM = _minToHHMM(resolved.scheduledMin);
+  const minHHMM = _minToHHMM(_scenarioNowMin() + BRIEFING_LEAD_TIME_MIN);
+  const input = prompt(`새 발송 시각을 입력하세요 (HH:mm)\n현재 발송 예정: ${currentHHMM}\n변경 가능 범위: ${minHHMM} 이후`, currentHHMM);
+  if (!input) return;
+  const m = input.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) { showToast('형식이 올바르지 않아요 (예: 14:30)'); return; }
+  const newMin = parseInt(m[1],10)*60 + parseInt(m[2],10);
+
+  const v = _validatePendingTimeChange(item, newMin);
+  if (!v.ok) { showToast(v.msg); return; }
+
+  state.pendingBriefingTimeChanges[itemId] = newMin;
+  document.getElementById(`time-change-menu-${itemId}`)?.classList.add('hidden');
+  renderPendingBriefingsSheet();
+  showToast(`${_minToHHMM(newMin)}으로 변경했어요`);
+}
+
+function confirmPendingSkip(itemId, label) {
+  if (!confirm(`오늘 ${label}을 받지 않을게요.\n내일부터 다시 정상 발송됩니다.`)) return;
+  state.pendingBriefingSkipped.push(itemId);
+  delete state.pendingBriefingTimeChanges[itemId];
+  renderPendingBriefingsSheet();
+  showToast(`${label} 오늘 발송을 해제했어요`);
 }
 
 // ─── Sidebar ─────────────────────────────────────────
