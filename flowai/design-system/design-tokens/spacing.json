@@ -1,0 +1,45 @@
+{
+  "$schema": "Flow AI Design System — Spacing Tokens v3",
+  "$source": "Figma: Flow AI - Typography System",
+
+  "baseUnit": 4,
+
+  "spacing": {
+    "0":    0,    "px":   1,    "0.5":  2,    "1":    4,
+    "1.5":  6,    "2":    8,    "2.5":  10,   "3":    12,
+    "3.5":  14,   "4":    16,   "5":    20,   "6":    24,
+    "7":    28,   "8":    32,   "9":    36,   "10":   40,
+    "11":   44,   "12":   48,   "14":   56,   "16":   64,
+    "18":   72,   "20":   80,   "24":   96,   "28":   112,
+    "32":   128,  "36":   144,  "40":   160,  "44":   176,
+    "48":   192,  "52":   208,  "56":   224,  "60":   240,
+    "64":   256,  "72":   288,  "80":   320,  "96":   384
+  },
+
+  "borderRadius": {
+    "none": 0,
+    "sm":   2,
+    "DEFAULT": 4,
+    "md":   6,
+    "lg":   8,
+    "xl":   12,
+    "2xl":  16,
+    "3xl":  24,
+    "full": 9999
+  },
+
+  "componentDefaults": {
+    "button":     { "px": 16, "py": 8,  "gap": 8,  "radius": 6 },
+    "card":       { "p": 24,  "gap": 16, "radius": 8 },
+    "modal":      { "p": 32,  "gap": 24, "radius": 12 },
+    "input":      { "px": 12, "py": 8,  "radius": 6 },
+    "listItem":   { "px": 16, "py": 12, "gap": 12 },
+    "section":    { "py": 48, "gap": 32 },
+    "page":       { "px": 24, "py": 32, "gap": 40 },
+    "toast":      { "p": 16,  "gap": 12, "radius": 6 },
+    "sidebar":    { "px": 12, "py": 16, "gap": 4 },
+    "header":     { "px": 24, "py": 16, "gap": 16 },
+    "chatBubble": { "px": 12, "py": 8,  "gap": 8, "radius": 6 },
+    "badge":      { "px": 8,  "py": 4,  "radius": 9999 }
+  }
+}

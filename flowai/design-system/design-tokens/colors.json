@@ -1,0 +1,138 @@
+{
+  "$schema": "Flow AI Design System — Color Tokens v3",
+  "$source": "Figma: Flow AI - Typography System",
+  "$total": "112 styles / 7 groups",
+
+  "brand": {
+    "50":  "#F3F1FF",
+    "100": "#E9E5FF",
+    "200": "#D6D0FF",
+    "300": "#B8AAFF",
+    "400": "#947DFF",
+    "500": "#5B40F8",
+    "600": "#4C34D1",
+    "700": "#3D29AA",
+    "800": "#2E1F83",
+    "900": "#1F155C"
+  },
+
+  "flow-bg": {
+    "50":  "#FCFBFE",
+    "100": "#F9F8FE",
+    "200": "#F4F3FD",
+    "300": "#EEECF9",
+    "400": "#E8E5F5",
+    "500": "#E9E5FF"
+  },
+
+  "gray": {
+    "white": "#FFFFFF",
+    "50":    "#F8FAFC",
+    "100":   "#F1F5F9",
+    "200":   "#E2E8F0",
+    "300":   "#CBD5E1",
+    "400":   "#94A3B8",
+    "500":   "#64748B",
+    "600":   "#475569",
+    "700":   "#334155",
+    "800":   "#1E293B",
+    "900":   "#0F172A",
+    "950":   "#020617",
+    "black": "#000000"
+  },
+
+  "theme": {
+    "primary":              "#5B40F8",
+    "primary-foreground":   "#FFFFFF",
+    "primary-hover":        "#4C34D1",
+    "background":           "#FFFFFF",
+    "foreground":           "#020617",
+    "card":                 "#FFFFFF",
+    "card-foreground":      "#020617",
+    "popover":              "#FFFFFF",
+    "popover-foreground":   "#020617",
+    "muted":                "#F1F5F9",
+    "muted-foreground":     "#64748B",
+    "muted-variant":        "#F5F7FB",
+    "muted-variant-2":      "#E6ECF3",
+    "accent":               "#F1F5F9",
+    "accent-foreground":    "#0F172A",
+    "secondary":            "#F1F5F9",
+    "secondary-foreground": "#0F172A",
+    "border":               "#E2E8F0",
+    "input":                "#E2E8F0",
+    "ring":                 "#64748B"
+  },
+
+  "semantic": {
+    "success": {
+      "text":        "#15803D",
+      "bg":          "#F0FDF4",
+      "bg-emphasis": "#22C55E",
+      "border":      "#BBF7D0",
+      "icon":        "#22C55E"
+    },
+    "danger": {
+      "text":        "#B91C1C",
+      "bg":          "#FEF2F2",
+      "bg-emphasis": "#EF4444",
+      "border":      "#FECACA",
+      "icon":        "#EF4444"
+    },
+    "warning": {
+      "text":        "#A16207",
+      "bg":          "#FFFBEB",
+      "bg-emphasis": "#F59E0B",
+      "border":      "#FDE68A",
+      "icon":        "#F59E0B"
+    },
+    "info": {
+      "text":        "#1D4ED8",
+      "bg":          "#EFF6FF",
+      "bg-emphasis": "#3B82F6",
+      "border":      "#BFDBFE",
+      "icon":        "#3B82F6"
+    },
+    "link": {
+      "default":    "#2677C8",
+      "hover":      "#1D4ED8",
+      "active":     "#1E40AF",
+      "visited":    "#6D28D9",
+      "disabled":   "#94A3B8",
+      "focus-ring": "#93C5FD"
+    },
+    "neutral": {
+      "text":   "#475569",
+      "bg":     "#F3F4F6",
+      "border": "#B9C1CA"
+    }
+  },
+
+  "project": {
+    "black":  "#111111",
+    "blue":   "#0066FF",
+    "gray":   "#999999",
+    "green":  "#00B01C",
+    "mint":   "#00B19C",
+    "orange": "#FD7900",
+    "pink":   "#FF5CAA",
+    "purple": "#8B00EA",
+    "red":    "#FF3434",
+    "sky":    "#00B2FF",
+    "white":  "#DDDDDD",
+    "yellow": "#FFB800"
+  },
+
+  "chart": {
+    "palette": [
+      "#EF4444", "#F28C28", "#F5C542", "#84CC16", "#22C55E", "#10B981",
+      "#2EC4B6", "#0EA5E9", "#4355DB", "#8B5CF6", "#D946EF", "#EC4899"
+    ],
+    "labels": ["Red","Orange","Yellow","Lime","Green","Emerald","Teal","Sky","Blue","Purple","Fuchsia","Pink"],
+    "bg": ["#FEF2F2","#FEF0E1","#FEF7E1","#F0FDF4","#ECFDF5","#EFF6FF"],
+    "grid":         "#E2E8F0",
+    "axis-text":    "#64748B",
+    "tooltip-bg":   "#1E293B",
+    "tooltip-text": "#F8FAFC"
+  }
+}
