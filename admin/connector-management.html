@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>flow AI 관리 — 커넥터 연동</title>
+  <style>
+    :root {
+      --primary: #5b40f8;
+      --primary-hover: #8053ff;
+      --primary-foreground: #ffffff;
+      --primary-soft: rgba(91, 64, 248, 0.08);
+      --primary-border: rgba(91, 64, 248, 0.22);
+
+      --background: #ffffff;
+      --foreground: #02061f;
+      --muted: #f1f5f9;
+      --muted-foreground: #64748b;
+      --border: #e2e8f0;
+      --ring: #64748b;
+
+      --flow-orange: #fd7900;
+      --flow-green: #00b01c;
+      --flow-red: #ff3434;
+
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-900: #0f172a;
+      --slate-950: #020617;
+
+      --green: var(--flow-green);
+      --red: var(--flow-red);
+      --amber: #f59e0b;
+
+      --muted-variant: hsl(220 14% 96%);
+      --muted-variant-2: hsl(220 13% 91%);
+
+      --bg-soft: #f8fafc;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg-soft); color: var(--slate-950); }
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    button { font: inherit; cursor: pointer; }
+    input, select { font: inherit; }
+    h1, h2, h3, h4 { margin: 0; font-weight: 600; }
+    .muted { color: var(--slate-500); }
+
+    /* ─── shell ─── */
+    .shell { min-height: 100vh; display: flex; }
+    .nav-rail {
+      width: 100%; max-width: 240px; flex-shrink: 0; background: var(--muted-variant);
+      padding: 12px; display: flex; flex-direction: column; gap: 8px;
+      position: sticky; top: 0; align-self: flex-start; height: 100vh;
+    }
+    .nav-close { width: 40px; height: 40px; border-radius: var(--radius-sm); border: 0; background: transparent; display: inline-flex; align-items: center; justify-content: center; color: var(--slate-700); padding: 6px; cursor: pointer; }
+    .nav-close:hover { background: var(--muted-variant-2); }
+    .nav-close svg { width: 24px; height: 24px; }
+    .nav-list { display: flex; flex-direction: column; gap: 8px; }
+    .nav-list button {
+      width: 100%; text-align: left; background: transparent; border: 0; border-radius: var(--radius-sm);
+      padding: 8px 12px; font-size: 14px; font-weight: 500; line-height: 1.25; color: var(--foreground);
+      transition: background-color .12s ease;
+    }
+    .nav-list button:hover { background: hsl(220 13% 91% / 0.5); }
+    .nav-list button.active { background: var(--muted-variant-2); }
+
+    .main { flex: 1; min-width: 0; }
+    .view { background: #fff; min-height: 100vh; }
+
+    .page-header { width: 100%; padding: 0; border-bottom: 1px solid var(--slate-100); }
+    .page-title-row { max-width: 896px; margin: 0 auto; padding: 32px 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .page-title { font-size: 24px; font-weight: 600; color: var(--slate-950); display: flex; align-items: center; gap: 12px; line-height: 32px; }
+    .page-sub { margin-top: 4px; font-size: 12px; color: var(--slate-500); max-width: 720px; letter-spacing: -0.01em; }
+
+    .tabbar-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; max-width: 896px; margin: 0 auto; padding: 0 24px; }
+    .tabs { display: flex; gap: 0; height: 48px; }
+    .tab-btn {
+      position: relative;
+      background: transparent; border: 0; padding: 14px 16px; font-size: 14px; font-weight: 500; line-height: 20px;
+      color: var(--slate-500); transition: all .12s ease; height: 100%;
+    }
+    .tab-btn:hover { background: var(--slate-50); }
+    .tab-btn.active { color: var(--slate-950); }
+    .tab-btn.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--slate-950); }
+
+    .body-content { padding: 16px 24px 48px; max-width: 896px; margin: 0 auto; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ─── buttons ─── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border: 1px solid transparent; transition: all .12s ease; background: transparent; }
+    .btn-outline { background: #fff; color: var(--slate-700); border-color: var(--slate-200); }
+    .btn-outline:hover { background: var(--slate-50); }
+    .btn-purple { background: var(--primary); color: #fff; }
+    .btn-purple:hover { filter: brightness(1.05); }
+    .btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+    /* ─── badge / chip ─── */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .badge.success { background: #dcfce7; color: #166534; }
+
+    /* ─── switch ─── */
+    .switch { width: 36px; height: 20px; background: var(--slate-300); border-radius: 999px; position: relative; cursor: pointer; transition: background-color .12s ease; flex-shrink: 0; }
+    .switch.on { background: var(--slate-950); }
+    .switch.disabled { opacity: 0.3; cursor: not-allowed; }
+    .switch::after { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: left .12s ease; }
+    .switch.on::after { left: 18px; }
+
+    /* ─── pagination ─── */
+    .pagination { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 14px; color: var(--slate-500); font-size: 12px; }
+    .page-btn { width: 28px; height: 28px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); background: #fff; display: inline-flex; align-items: center; justify-content: center; }
+    .page-btn:disabled { opacity: 0.5; }
+
+    /* ─── footnote ─── */
+    .footnote { font-size: 11px; color: var(--slate-500); margin-bottom: 10px; }
+    .info-icon { width: 12px; height: 12px; color: var(--muted-foreground); display: inline-block; vertical-align: middle; margin-left: 2px; flex-shrink: 0; }
+
+    /* ─── history table (flex 행 + 고정 폭 셀) ─── */
+    .table { width: 100%; border: 1px solid var(--slate-200); border-radius: var(--radius); overflow: hidden; background: #fff; }
+    .hist-row { display: flex; padding: 0; border-bottom: 1px solid var(--slate-100); font-size: 12px; color: var(--foreground); }
+    .hist-row.head { background: var(--slate-50); color: var(--slate-700); font-size: 11px; font-weight: 600; }
+    .hist-row:last-child { border-bottom: 0; }
+    .hist-row > div { display: flex; align-items: center; padding: 8px; flex-shrink: 0; min-width: 0; }
+
+    /* 사용 이력 — 8컬럼 */
+    [data-hseg="usage"] .hist-row > div:nth-child(1) { width: 150px; }
+    [data-hseg="usage"] .hist-row > div:nth-child(2) { width: 72px; }
+    [data-hseg="usage"] .hist-row > div:nth-child(3) { width: 128px; }
+    [data-hseg="usage"] .hist-row > div:nth-child(4) { width: 64px; }
+    [data-hseg="usage"] .hist-row > div:nth-child(5) { width: 80px; }
+    [data-hseg="usage"] .hist-row > div:nth-child(6) { width: 80px; }
+    [data-hseg="usage"] .hist-row > div:nth-child(7) { flex: 1; min-width: 0; }
+    [data-hseg="usage"] .hist-row > div:nth-child(8) { width: 48px; justify-content: center; }
+
+    /* 연결 이력 — 5컬럼 */
+    [data-hseg="connect"] .hist-row > div:nth-child(1) { width: 160px; }
+    [data-hseg="connect"] .hist-row > div:nth-child(2) { width: 80px; }
+    [data-hseg="connect"] .hist-row > div:nth-child(3) { width: 140px; }
+    [data-hseg="connect"] .hist-row > div:nth-child(4) { width: 80px; }
+    [data-hseg="connect"] .hist-row > div:nth-child(5) { flex: 1; min-width: 0; }
+
+    .pill-sm { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 999px; background: var(--muted); color: var(--foreground); margin-right: 4px; line-height: 16px; }
+    .hist-detail { background: transparent; border: 0; color: var(--muted-foreground); font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; }
+    .hist-detail:hover { color: var(--foreground); }
+
+    /* ─── MCP 카드 / 툴바 / 세그먼트 ─── */
+    .mcp-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 16px; }
+    .mcp-toolbar.with-seg { justify-content: space-between; align-items: center; }
+
+    .segmented { display: inline-flex; background: var(--slate-100); border-radius: 8px; padding: 3px; gap: 2px; }
+    .seg-btn { background: transparent; border: 0; padding: 7px 16px; font-size: 13px; line-height: 18px; color: var(--slate-600); border-radius: 6px; cursor: pointer; font-weight: 500; transition: all .12s ease; }
+    .seg-btn:hover { color: var(--slate-900); }
+    .seg-btn.active { background: #fff; color: var(--slate-950); box-shadow: 0 1px 2px rgba(0,0,0,0.06); font-weight: 600; }
+    .hist-segment { display: none; }
+    .hist-segment.active { display: block; }
+
+    .mcp-list { display: flex; flex-direction: column; gap: 12px; }
+    .mcp-card {
+      display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+      background: #fff; border: 1px solid var(--slate-200); border-radius: var(--radius);
+      box-shadow: var(--shadow); transition: all .15s ease;
+    }
+    .mcp-card:hover { border-color: var(--slate-300); box-shadow: 0 4px 8px rgba(15,23,42,0.06); }
+    .mcp-card .mcp-logo {
+      width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; background: var(--slate-100); color: var(--slate-700);
+    }
+    .mcp-card .mcp-logo.notion { background: #000; color: #fff; }
+    .mcp-card .mcp-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .mcp-card .mcp-title-row { display: flex; align-items: center; gap: 8px; }
+    .mcp-card .mcp-users {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; color: var(--muted-foreground);
+      padding: 0 0 0 8px;
+      border-left: 1px solid var(--slate-200);
+    }
+    .mcp-card .mcp-title { font-size: 16px; font-weight: 600; color: var(--slate-950); }
+    .mcp-card .mcp-desc { font-size: 13px; color: var(--slate-500); line-height: 1.4; }
+    .mcp-card .mcp-scope { font-size: 12px; color: var(--slate-400); margin-top: 2px; }
+    .mcp-card .scope-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .mcp-card .scope-pill {
+      display: inline-flex; align-items: center;
+      padding: 2px 6px;
+      font-size: 10px; font-weight: 500; color: var(--slate-500);
+      background: var(--slate-50);
+      box-shadow: inset 0 0 0 1px var(--slate-200);
+      border-radius: 4px;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .mcp-card .scope-pill.more { color: var(--slate-400); }
+    .mcp-card .mcp-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .mcp-card .mcp-tool-btn {
+      background: transparent; border: 0; display: inline-flex; align-items: center; gap: 4px;
+      color: var(--slate-600); font-size: 13px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer;
+    }
+    .mcp-card .mcp-tool-btn:hover { background: var(--slate-50); color: var(--slate-900); }
+    .mcp-card .switch.primary.on { background: var(--primary); }
+
+    /* ─── dialogs ─── */
+    .dialog-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+    .dialog-backdrop.open { display: flex; }
+    .dialog { background: #fff; border-radius: 12px; max-width: 480px; width: 100%; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+
+    /* 도구 관리 모달 (Notion 도구) */
+    .dialog.dialog-wide { max-width: 640px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; padding: 24px; gap: 0; }
+    .dialog-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .dialog-head h3 { font-size: 18px; font-weight: 700; }
+    .dialog-close { background: transparent; border: 0; color: var(--slate-400); cursor: pointer; padding: 4px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; }
+    .dialog-close:hover { background: var(--slate-100); color: var(--slate-700); }
+    .dialog .dlg-desc { font-size: 14px; color: var(--slate-500); margin: 0 0 16px; }
+
+    .tool-search-row { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 16px 4px; border-bottom: 1px solid var(--slate-100); }
+    .tool-status-card {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 14px 16px 20px;
+      border-radius: 12px;
+      background: var(--slate-50); border: 1px solid var(--slate-100);
+    }
+    .tool-status-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .tool-status-left .dot { width: 8px; height: 8px; border-radius: 999px; background: #16a34a; flex-shrink: 0; transition: background-color .12s ease; }
+    .tool-status-left .dot.partial { background: var(--flow-orange); }
+    .tool-status-left .dot.off { background: var(--slate-300); }
+    .tool-status-left .status-text { font-size: 14px; color: var(--slate-900); font-weight: 500; }
+    .tool-status-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .tool-toggle-group { display: flex; align-items: center; gap: 14px; flex-shrink: 0; cursor: pointer; }
+    .tool-toggle-group .switch { width: 48px; height: 26px; cursor: pointer; }
+    .tool-toggle-group .switch::after { width: 20px; height: 20px; top: 3px; left: 3px; }
+    .tool-toggle-group .switch.on::after { left: 25px; }
+    .tool-toggle-group .switch.primary.on { background: var(--primary); }
+    .tool-toggle-group .lbl { font-size: 15px; font-weight: 500; color: var(--slate-900); user-select: none; }
+    .tool-divider { width: 1px; height: 28px; background: var(--slate-200); flex-shrink: 0; }
+    .tool-search-wrap { flex: 1; position: relative; min-width: 0; }
+    .tool-search-wrap .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--slate-400); pointer-events: none; display: inline-flex; }
+    .tool-search-wrap input { width: 100%; height: 46px; padding: 0 14px 0 42px; border: 1px solid var(--slate-200); border-radius: 10px; background: var(--background); font: inherit; font-size: 14px; color: var(--slate-950); }
+    .tool-search-wrap input::placeholder { color: var(--slate-400); }
+    .tool-search-wrap input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+    .tool-sections { padding-top: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+    .tool-section { display: flex; flex-direction: column; gap: 10px; }
+    .tool-section[data-section="inactive"] .tool-section-head { color: var(--slate-500); }
+    .tool-section[data-section="inactive"] .tool-section-head .dot { background: var(--slate-300); }
+    .tool-section.empty { display: none; }
+    .tool-section-head { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: #16a34a; }
+    .tool-section-head .dot { width: 6px; height: 6px; border-radius: 999px; background: #16a34a; display: inline-block; }
+    .tool-section-head .count { color: var(--slate-400); font-weight: 500; }
+    .tool-list { display: flex; flex-direction: column; gap: 10px; }
+    .tool-card {
+      background: #fff; border: 1px solid var(--slate-200); border-radius: var(--radius);
+      padding: 12px 14px 12px 16px; cursor: pointer; transition: all .12s ease;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .tool-card:hover { border-color: var(--slate-300); background: var(--slate-50); }
+    .tool-card.inactive { background: var(--slate-50); border-color: var(--slate-100); }
+    .tool-card.inactive:hover { background: #f1f3f5; }
+    .tool-card.inactive .name { color: var(--slate-500); }
+    .tool-card.inactive .desc { color: var(--slate-400); }
+    .tool-card-content { flex: 1; min-width: 0; }
+    .tool-card .name { font-size: 14px; font-weight: 600; color: var(--slate-900); margin-bottom: 4px; }
+    .tool-card .desc { font-size: 13px; color: var(--slate-500); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+    .tool-card-toggle { flex-shrink: 0; }
+    .tool-card-toggle .switch.primary.on { background: var(--primary); }
+
+    .dialog .dlg-footer-tools { display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; border-top: 1px solid var(--slate-100); margin-top: 16px; }
+
+    /* 상세 정보 / 서비스 추가 — shadcn 스타일 */
+    .dialog.dialog-detail {
+      max-width: 512px; width: calc(100% - 32px);
+      padding: 24px; border-radius: 16px; gap: 20px;
+      display: flex; flex-direction: column;
+      max-height: 85vh; overflow-y: auto;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+    .dialog-detail .dlg-header h2 { font-size: 18px; font-weight: 600; line-height: 1; letter-spacing: -0.025em; margin: 0; }
+    .dialog-detail .dlg-header p { font-size: 12px; color: var(--muted-foreground); margin: 6px 0 0; line-height: 1.5; }
+    .dialog-detail .dlg-close {
+      position: absolute; right: 16px; top: 16px;
+      background: transparent; border: 0; padding: 4px; border-radius: 4px;
+      color: var(--slate-700); opacity: 0.7; cursor: pointer; transition: opacity .12s ease;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .dialog-detail .dlg-close:hover { opacity: 1; }
+
+    .detail-meta {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
+      background: color-mix(in srgb, var(--muted) 30%, transparent);
+      border: 1px solid var(--slate-200); border-radius: 8px;
+      padding: 12px 16px; font-size: 14px; color: var(--slate-900);
+    }
+    .detail-meta > div { display: flex; align-items: center; gap: 6px; min-width: 0; line-height: 1.5; }
+    .detail-meta .lbl { color: var(--muted-foreground); flex-shrink: 0; }
+    .detail-meta .val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .detail-meta .pill-wrap { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+    .detail-meta .pill { display: inline-block; background: var(--muted); color: var(--foreground); border-radius: 999px; padding: 2px 8px; font-size: 12px; line-height: 16px; }
+
+    .detail-table-wrap { overflow: hidden; border: 1px solid var(--slate-200); border-radius: 8px; }
+    .detail-table-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .detail-table-wrap thead tr { background: color-mix(in srgb, var(--muted) 50%, transparent); border-bottom: 1px solid var(--slate-200); color: var(--muted-foreground); }
+    .detail-table-wrap th { padding: 6px 0; font-weight: 500; text-align: left; }
+    .detail-table-wrap th.col-no { width: 44px; text-align: center; border-right: 1px solid var(--slate-200); }
+    .detail-table-wrap th.col-tool { padding-left: 12px; border-right: 1px solid var(--slate-200); }
+    .detail-table-wrap th.col-type { width: 10rem; padding-left: 12px; }
+    .detail-table-wrap tbody tr { border-bottom: 1px solid var(--slate-200); }
+    .detail-table-wrap tbody tr:last-child { border-bottom: 0; }
+    .detail-table-wrap tbody tr:hover { background: color-mix(in srgb, var(--muted) 20%, transparent); }
+    .detail-table-wrap td { padding: 8px 0; }
+    .detail-table-wrap td.col-no { color: var(--muted-foreground); text-align: center; border-right: 1px solid var(--slate-200); }
+    .detail-table-wrap td.col-tool { padding-left: 12px; padding-right: 8px; border-right: 1px solid var(--slate-200); max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .detail-table-wrap td.col-type { padding-left: 12px; }
+    .detail-table-wrap .type-badge {
+      display: inline-flex; align-items: center;
+      border: 1px solid transparent; border-radius: 6px;
+      padding: 2px 10px; font-size: 12px; font-weight: 600;
+      background: var(--muted); color: var(--foreground);
+      white-space: nowrap;
+    }
+    .dialog-detail .field-group { margin-top: 0; }
+    .dialog-detail .dlg-footer-detail { display: flex; justify-content: flex-end; gap: 8px; }
+
+    .field-group { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .field-group .field-label { font-size: 14px; font-weight: 500; color: var(--slate-900); }
+    .service-select {
+      width: 100%; height: 36px; padding: 8px 32px 8px 12px;
+      border: 1px solid var(--slate-200); border-radius: 6px;
+      background-color: transparent;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' opacity='0.5'><path d='m6 9 6 6 6-6'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+      font: inherit; font-size: 14px; color: var(--foreground); line-height: 1;
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      cursor: pointer; white-space: nowrap;
+    }
+    .service-select:focus { outline: none; box-shadow: 0 0 0 1px var(--ring, var(--primary)), 0 1px 2px 0 rgba(0,0,0,0.05); }
+    .service-select.placeholder { color: var(--muted-foreground); }
+
+    /* ─── toast ─── */
+    .toast-zone { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+    .toast { background: var(--slate-950); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 320px; }
+    .toast.error { background: var(--red); }
+    .toast.warning { background: var(--amber); }
+    .toast.success { background: var(--green); }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="nav-rail">
+      <button class="nav-close" aria-label="닫기" title="어드민 모달 닫기">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+      <nav class="nav-list">
+        <button>AI 활용 현황</button>
+        <button>AI 보안 관리</button>
+        <button>AI 요금제 관리</button>
+        <button>기업용 챗봇 관리</button>
+        <button>사용자 및 권한 관리</button>
+        <button class="active">커넥터 연동</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <section class="view">
+        <header class="page-header">
+      <div class="page-title-row">
+        <div>
+          <div class="page-title">커넥터 연동</div>
+          <div class="page-sub">외부 서비스 커넥터를 통해 AI 기능을 확장하고, 연결 및 사용 이력을 관리합니다.</div>
+        </div>
+      </div>
+      <div class="tabbar-row">
+        <div class="tabs" id="mcpTabs">
+          <button class="tab-btn active" data-mtab="external-setting">외부 커넥터 설정</button>
+          <button class="tab-btn" data-mtab="external-history">외부 커넥터 이력</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="body-content">
+      <!-- ─── 외부 커넥터 설정 ─── -->
+      <div class="panel active" data-mpanel="external-setting">
+        <div class="mcp-toolbar">
+          <button class="btn btn-outline btn-icon" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+            새로고침
+          </button>
+          <button class="btn btn-purple btn-icon" type="button" onclick="openDialog('serviceConnect')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+            서비스 추가
+          </button>
+        </div>
+        <div class="mcp-list">
+          <div class="mcp-card">
+            <div class="mcp-logo notion">N</div>
+            <div class="mcp-meta">
+              <div class="mcp-title-row">
+                <span class="mcp-title">Notion</span>
+                <span class="badge success">활성</span>
+                <span class="mcp-users" title="현재 연결한 인원">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                  <span>24명 연결</span>
+                </span>
+              </div>
+              <div class="mcp-desc">Notion 워크스페이스에서 페이지, 데이터베이스를 조회하고 관리합니다.</div>
+              <div class="mcp-scope" id="notionScope">전체 도구 허용</div>
+            </div>
+            <div class="mcp-actions">
+              <button class="mcp-tool-btn" type="button" onclick="openDialog('notionTools')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                도구
+              </button>
+              <div class="switch primary on" data-toggle></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 외부 커넥터 이력 ─── -->
+      <div class="panel" data-mpanel="external-history">
+        <div class="mcp-toolbar with-seg">
+          <div class="segmented" id="extHistSeg">
+            <button class="seg-btn active" data-seg="usage">사용 이력</button>
+            <button class="seg-btn" data-seg="connect">연결 이력</button>
+          </div>
+        </div>
+        <div class="footnote">* 로그는 최대 1년간 보관되며, 보관 기간 경과 시 자동으로 삭제됩니다.</div>
+
+        <!-- 사용 이력 -->
+        <div class="hist-segment active" data-hseg="usage">
+          <div class="table">
+            <div class="hist-row head">
+              <div>일시</div>
+              <div>사용자</div>
+              <div>부서</div>
+              <div>직책</div>
+              <div>분류 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></div>
+              <div>기능 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></div>
+              <div>커넥터</div>
+              <div>상세</div>
+            </div>
+            <div class="hist-row"><div>2026-05-14 (목) 16:31</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div>AI 대화</div><div>자유대화</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 16:25</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div>챗봇 대화</div><div>자유대화</div><div><span class="pill-sm">Notion</span><span class="pill-sm">Slack</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 16:02</div><div>박지호</div><div>PM3팀</div><div>책임</div><div>AI 대화</div><div>플로우검색</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 15:53</div><div>최예린</div><div>PM3팀</div><div>책임</div><div>AI 대화</div><div>자유대화</div><div><span class="pill-sm">Notion</span><span class="pill-sm">Google Drive</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 15:13</div><div>정시우</div><div>SaaS컨설팅팀</div><div>책임</div><div>챗봇 대화</div><div>자유대화</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 14:48</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div>AI 대화</div><div>플로우검색</div><div><span class="pill-sm">Notion</span><span class="pill-sm">Slack</span><span class="pill-sm">GitHub</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 14:02</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div>AI 대화</div><div>자유대화</div><div><span class="pill-sm">Slack</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 11:55</div><div>박지호</div><div>PM3팀</div><div>책임</div><div>챗봇 생성</div><div>챗봇 설정</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 18:14</div><div>최예린</div><div>PM3팀</div><div>책임</div><div>AI 대화</div><div>자유대화</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 16:08</div><div>정시우</div><div>SaaS컨설팅팀</div><div>책임</div><div>AI 대화</div><div>웹 검색</div><div><span class="pill-sm">GitHub</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 14:32</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div>AI 대화</div><div>자유대화</div><div><span class="pill-sm">Notion</span><span class="pill-sm">Slack</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 13:48</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div>AI 대화</div><div>플로우검색</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 11:22</div><div>박지호</div><div>PM3팀</div><div>책임</div><div>챗봇 대화</div><div>자유대화</div><div><span class="pill-sm">Slack</span><span class="pill-sm">Google Drive</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 09:55</div><div>최예린</div><div>PM3팀</div><div>책임</div><div>AI 대화</div><div>웹 검색</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 19:08</div><div>정시우</div><div>SaaS컨설팅팀</div><div>책임</div><div>AI 대화</div><div>자유대화</div><div><span class="pill-sm">GitHub</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 17:24</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div>AI 대화</div><div>플로우검색</div><div><span class="pill-sm">Notion</span><span class="pill-sm">Slack</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 15:50</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div>챗봇 대화</div><div>자유대화</div><div><span class="pill-sm">Notion</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 13:18</div><div>박지호</div><div>PM3팀</div><div>책임</div><div>AI 대화</div><div>자유대화</div><div><span class="pill-sm">Google Drive</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 10:42</div><div>최예린</div><div>PM3팀</div><div>책임</div><div>AI 대화</div><div>웹 검색</div><div><span class="pill-sm">Notion</span><span class="pill-sm">GitHub</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 08:30</div><div>정시우</div><div>SaaS컨설팅팀</div><div>책임</div><div>챗봇 대화</div><div>자유대화</div><div><span class="pill-sm">Slack</span></div><div><button type="button" class="hist-detail">보기</button></div></div>
+          </div>
+          <div class="pagination"><button class="page-btn" disabled>‹</button><span>1 / 12</span><button class="page-btn">›</button></div>
+        </div>
+
+        <!-- 연결 이력 -->
+        <div class="hist-segment" data-hseg="connect">
+          <div class="table">
+            <div class="hist-row head">
+              <div>일시</div>
+              <div>사용자</div>
+              <div>부서</div>
+              <div>직책</div>
+              <div>커넥터</div>
+            </div>
+            <div class="hist-row"><div>2026-05-14 (목) 15:32</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 14:08</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 11:42</div><div>박지호</div><div>PM3팀</div><div>책임</div><div><span class="pill-sm">Google Drive</span></div></div>
+            <div class="hist-row"><div>2026-05-14 (목) 09:18</div><div>최예린</div><div>PM3팀</div><div>책임</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 18:50</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 16:24</div><div>정시우</div><div>SaaS컨설팅팀</div><div>책임</div><div><span class="pill-sm">GitHub</span></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 14:08</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div><span class="pill-sm">Google Drive</span></div></div>
+            <div class="hist-row"><div>2026-05-13 (수) 11:14</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div><span class="pill-sm">Slack</span></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 17:42</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div><span class="pill-sm">Slack</span></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 15:08</div><div>박지호</div><div>PM3팀</div><div>책임</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 12:34</div><div>최예린</div><div>PM3팀</div><div>책임</div><div><span class="pill-sm">Slack</span></div></div>
+            <div class="hist-row"><div>2026-05-12 (화) 09:25</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div><span class="pill-sm">GitHub</span></div></div>
+            <div class="hist-row"><div>2026-05-11 (월) 19:18</div><div>정시우</div><div>SaaS컨설팅팀</div><div>책임</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-11 (월) 16:02</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div><span class="pill-sm">GitHub</span></div></div>
+            <div class="hist-row"><div>2026-05-11 (월) 13:50</div><div>박지호</div><div>PM3팀</div><div>책임</div><div><span class="pill-sm">Slack</span></div></div>
+            <div class="hist-row"><div>2026-05-11 (월) 10:28</div><div>최예린</div><div>PM3팀</div><div>책임</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-10 (일) 21:08</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div><span class="pill-sm">Slack</span></div></div>
+            <div class="hist-row"><div>2026-05-10 (일) 14:35</div><div>정시우</div><div>SaaS컨설팅팀</div><div>책임</div><div><span class="pill-sm">Google Drive</span></div></div>
+            <div class="hist-row"><div>2026-05-09 (토) 18:22</div><div>이서연</div><div>콘텐츠지원팀</div><div>책임</div><div><span class="pill-sm">Notion</span></div></div>
+            <div class="hist-row"><div>2026-05-09 (토) 14:36</div><div>김민준</div><div>AI사업개발실</div><div>실장</div><div><span class="pill-sm">Notion</span></div></div>
+          </div>
+          <div class="pagination"><button class="page-btn" disabled>‹</button><span>1 / 3</span><button class="page-btn">›</button></div>
+        </div>
+      </div>
+    </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ─── dialogs ─── -->
+  <div class="dialog-backdrop" data-dialog="usageDetail">
+    <div class="dialog dialog-detail" role="dialog" aria-labelledby="usageDetailTitle">
+      <div class="dlg-header">
+        <h2 id="usageDetailTitle">상세 정보</h2>
+        <p>AI가 호출한 커넥터 도구와 수행된 작업 내역을 확인할 수 있습니다.</p>
+      </div>
+
+      <div class="detail-meta">
+        <div><span class="lbl">일시: </span><span class="val" id="detailWhen">—</span></div>
+        <div><span class="lbl">분류: </span><span class="val" id="detailCategory">—</span></div>
+        <div><span class="lbl">기능: </span><span class="val" id="detailFeature">—</span></div>
+        <div><span class="lbl">커넥터: </span><span class="pill-wrap" id="detailConnector">—</span></div>
+      </div>
+
+      <div class="detail-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">#</th>
+              <th class="col-tool">사용 도구</th>
+              <th class="col-type">유형</th>
+            </tr>
+          </thead>
+          <tbody id="detailTableBody"></tbody>
+        </table>
+      </div>
+
+      <button type="button" class="dlg-close" onclick="closeDialog()" aria-label="닫기">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" data-dialog="serviceConnect">
+    <div class="dialog dialog-detail" role="dialog" aria-labelledby="serviceConnectTitle">
+      <div class="dlg-header">
+        <h2 id="serviceConnectTitle">외부 서비스 추가</h2>
+        <p>조직에서 사용할 외부 서비스 커넥터를 추가합니다.</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="serviceConnectSelect">서비스</label>
+        <select id="serviceConnectSelect" class="service-select placeholder" onchange="this.classList.toggle('placeholder', !this.value)">
+          <option value="">서비스를 선택하세요</option>
+          <option value="notion">Notion</option>
+          <option value="slack">Slack</option>
+          <option value="google-drive">Google Drive</option>
+          <option value="github">GitHub</option>
+          <option value="jira">Jira</option>
+          <option value="linear">Linear</option>
+          <option value="figma">Figma</option>
+        </select>
+      </div>
+
+      <div class="dlg-footer-detail">
+        <button class="btn btn-outline" onclick="closeDialog()">취소</button>
+        <button class="btn btn-purple" onclick="confirmServiceConnect()">추가</button>
+      </div>
+
+      <button type="button" class="dlg-close" onclick="closeDialog()" aria-label="닫기">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" data-dialog="notionTools">
+    <div class="dialog dialog-wide">
+      <div class="dialog-head">
+        <div>
+          <h3>Notion 도구 관리</h3>
+          <p class="dlg-desc">에이전트가 사용할 도구를 선택하세요. 비활성 도구는 사용되지 않습니다.</p>
+        </div>
+        <button class="dialog-close" type="button" onclick="closeDialog()" aria-label="닫기">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="tool-search-row">
+        <div class="tool-search-wrap">
+          <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          </span>
+          <input type="text" id="toolSearchInput" placeholder="도구 검색..." oninput="filterTools(this.value)" />
+        </div>
+        <div class="tool-status-card">
+          <div class="tool-status-left">
+            <span class="dot" id="toolStatusDot"></span>
+            <span class="status-text" id="toolStatusText">모든 도구가 활성화되었습니다</span>
+          </div>
+          <div class="tool-status-right">
+            <div class="tool-divider"></div>
+            <div class="tool-toggle-group" onclick="toggleAllTools()">
+              <span class="lbl">전체 허용</span>
+              <div class="switch primary on" id="toolAllToggle"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-sections" id="toolSections">
+        <div class="tool-section" data-section="active">
+          <div class="tool-section-head"><span class="dot"></span>활성 <span class="count">14</span></div>
+          <div class="tool-list" id="toolListActive">
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-search</div><div class="desc">Perform a search over: - "internal": Semantic search over Notion workspace and connected data sources. Returns relevant pages, databases, and content matching your query.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-fetch</div><div class="desc">Retrieves details about a Notion entity (page, database, or data source) by URL or ID. Returns properties, content blocks, and metadata.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-create-pages</div><div class="desc">## Overview Creates one or more Notion pages, with the specified properties and content blocks. Supports parent page or database location.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-update-page</div><div class="desc">## Overview Update a Notion page's properties or content. ## Properties Notion properties can be modified with explicit type-aware payload.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-move-pages</div><div class="desc">Move one or more Notion pages or databases to a new parent.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-duplicate-page</div><div class="desc">Duplicate a Notion page including all child blocks and properties to a destination parent.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-create-database</div><div class="desc">Create a new Notion database with given schema and parent location.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-update-database</div><div class="desc">Update a Notion database's schema or display properties.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-query-database</div><div class="desc">Query rows from a Notion database with filter, sort, and pagination options.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-get-comments</div><div class="desc">Retrieve comments attached to a Notion page or block.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-add-comment</div><div class="desc">Add a new comment to a Notion page, block, or discussion.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-list-users</div><div class="desc">List users in the connected Notion workspace.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-get-user</div><div class="desc">Retrieve information about a single Notion user by ID.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+            <div class="tool-card" onclick="toggleTool(this)"><div class="tool-card-content"><div class="name">notion-get-self</div><div class="desc">Retrieve the bot user (current integration) information.</div></div><div class="tool-card-toggle"><div class="switch primary on"></div></div></div>
+          </div>
+        </div>
+        <div class="tool-section empty" data-section="inactive">
+          <div class="tool-section-head"><span class="dot"></span>비활성 <span class="count">0</span></div>
+          <div class="tool-list" id="toolListInactive"></div>
+        </div>
+      </div>
+
+      <div class="dlg-footer-tools">
+        <button class="btn btn-outline" onclick="closeDialog()">취소</button>
+        <button class="btn btn-purple" onclick="toast('도구 설정이 저장되었습니다', 'success'); closeDialog()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-zone" id="toastZone"></div>
+
+  <script>
+    // ─── tabs (외부 설정 / 외부 이력) ───
+    document.getElementById('mcpTabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      document.querySelectorAll('#mcpTabs .tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      const key = btn.dataset.mtab;
+      document.querySelectorAll('[data-mpanel]').forEach((p) => p.classList.toggle('active', p.dataset.mpanel === key));
+    });
+
+    // ─── segmented (사용 이력 / 연결 이력) ───
+    document.getElementById('extHistSeg').addEventListener('click', (e) => {
+      const btn = e.target.closest('.seg-btn');
+      if (!btn) return;
+      document.querySelectorAll('#extHistSeg .seg-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      const key = btn.dataset.seg;
+      document.querySelectorAll('.hist-segment').forEach((s) => s.classList.toggle('active', s.dataset.hseg === key));
+    });
+
+    // ─── dialog ───
+    window.openDialog = (k) => document.querySelector(`[data-dialog="${k}"]`)?.classList.add('open');
+    window.closeDialog = () => document.querySelectorAll('.dialog-backdrop').forEach((d) => d.classList.remove('open'));
+    document.querySelectorAll('.dialog-backdrop').forEach((d) => {
+      d.addEventListener('click', (e) => { if (e.target === d) closeDialog(); });
+    });
+
+    // ─── toast ───
+    window.toast = (msg, kind = '') => {
+      const t = document.createElement('div');
+      t.className = 'toast ' + kind;
+      t.textContent = msg;
+      document.getElementById('toastZone').appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    };
+
+    // ─── 일반 스위치 토글 ───
+    document.querySelectorAll('.switch[data-toggle]').forEach((s) => {
+      s.addEventListener('click', () => s.classList.toggle('on'));
+    });
+
+    // ─── 외부 서비스 추가 ───
+    window.confirmServiceConnect = () => {
+      const sel = document.getElementById('serviceConnectSelect');
+      if (!sel.value) {
+        toast('서비스를 선택해주세요', 'error');
+        return;
+      }
+      const label = sel.options[sel.selectedIndex].text;
+      toast(`${label} 연동을 시작합니다`, 'success');
+      closeDialog();
+      sel.value = '';
+      sel.classList.add('placeholder');
+    };
+
+    // ─── Notion 도구 토글 ───
+    window.toggleTool = (card) => {
+      const sw = card.querySelector('.tool-card-toggle .switch');
+      const turningOn = !sw.classList.contains('on');
+      sw.classList.toggle('on', turningOn);
+      card.classList.toggle('inactive', !turningOn);
+      const targetList = document.getElementById(turningOn ? 'toolListActive' : 'toolListInactive');
+      targetList.appendChild(card);
+      refreshToolCounts();
+    };
+
+    window.toggleAllTools = () => {
+      const allBtn = document.getElementById('toolAllToggle');
+      const turningOn = !allBtn.classList.contains('on');
+      allBtn.classList.toggle('on', turningOn);
+      document.querySelectorAll('.tool-card').forEach((card) => {
+        const sw = card.querySelector('.tool-card-toggle .switch');
+        sw.classList.toggle('on', turningOn);
+        card.classList.toggle('inactive', !turningOn);
+        const targetList = document.getElementById(turningOn ? 'toolListActive' : 'toolListInactive');
+        targetList.appendChild(card);
+      });
+      refreshToolCounts();
+    };
+
+    function refreshToolCounts() {
+      const activeList = document.getElementById('toolListActive');
+      const inactiveList = document.getElementById('toolListInactive');
+      const active = activeList.querySelectorAll('.tool-card').length;
+      const inactive = inactiveList.querySelectorAll('.tool-card').length;
+      const total = active + inactive;
+
+      document.querySelector('[data-section="active"] .count').textContent = active;
+      document.querySelector('[data-section="inactive"] .count').textContent = inactive;
+      document.querySelector('[data-section="active"]').classList.toggle('empty', active === 0);
+      document.querySelector('[data-section="inactive"]').classList.toggle('empty', inactive === 0);
+
+      const dot = document.getElementById('toolStatusDot');
+      const text = document.getElementById('toolStatusText');
+      const allBtn = document.getElementById('toolAllToggle');
+      dot.classList.remove('partial', 'off');
+      if (active === total) {
+        text.textContent = '모든 도구가 활성화되었습니다';
+        allBtn.classList.add('on');
+      } else if (active === 0) {
+        text.textContent = '모든 도구가 비활성화되었습니다';
+        dot.classList.add('off');
+        allBtn.classList.remove('on');
+      } else {
+        text.textContent = `${active}/${total}개 도구 활성화됨`;
+        dot.classList.add('partial');
+        allBtn.classList.remove('on');
+      }
+
+      // Notion 카드 스코프 표시
+      const scopeEl = document.getElementById('notionScope');
+      if (scopeEl) {
+        if (active === total) {
+          scopeEl.innerHTML = '전체 도구 허용';
+        } else if (active === 0) {
+          scopeEl.innerHTML = '<span style="color: var(--slate-500)">허용된 도구 없음</span>';
+        } else {
+          const names = Array.from(activeList.querySelectorAll('.tool-card .name')).map((n) => n.textContent.trim());
+          const SHOW = 3;
+          const shown = names.slice(0, SHOW);
+          const rest = names.length - shown.length;
+          scopeEl.innerHTML = '<div class="scope-pills">'
+            + shown.map((n) => `<span class="scope-pill">${n}</span>`).join('')
+            + (rest > 0 ? `<span class="scope-pill more">+${rest}</span>` : '')
+            + '</div>';
+        }
+      }
+    }
+
+    window.filterTools = (q) => {
+      const term = (q || '').trim().toLowerCase();
+      document.querySelectorAll('.tool-card').forEach((card) => {
+        const name = card.querySelector('.name').textContent.toLowerCase();
+        const desc = card.querySelector('.desc').textContent.toLowerCase();
+        card.style.display = !term || name.includes(term) || desc.includes(term) ? '' : 'none';
+      });
+    };
+
+    // ─── 사용 이력 상세 보기 ───
+    const USAGE_DETAIL_SAMPLES = [
+      [{ tool: 'notion-search', type: '검색' }, { tool: 'notion-fetch', type: '조회' }, { tool: 'notion-query-database', type: '검색' }, { tool: 'notion-fetch', type: '조회' }],
+      [{ tool: 'notion-search', type: '검색' }, { tool: 'slack-channels-list', type: '조회' }, { tool: 'slack-channels-history', type: '조회' }],
+      [{ tool: 'notion-fetch', type: '조회' }, { tool: 'notion-create-pages', type: '생성' }],
+      [{ tool: 'notion-search', type: '검색' }, { tool: 'google-drive-search', type: '검색' }, { tool: 'google-drive-read', type: '조회' }, { tool: 'notion-fetch', type: '조회' }, { tool: 'notion-fetch', type: '조회' }],
+      [{ tool: 'notion-query-database', type: '검색' }, { tool: 'notion-fetch', type: '조회' }],
+    ];
+    document.querySelectorAll('[data-hseg="usage"] .hist-row:not(.head)').forEach((row, idx) => {
+      const btn = row.querySelector('.hist-detail');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const cells = row.querySelectorAll(':scope > div');
+        document.getElementById('detailWhen').textContent = cells[0]?.textContent.trim() || '—';
+        document.getElementById('detailCategory').textContent = cells[4]?.textContent.trim() || '—';
+        document.getElementById('detailFeature').textContent = cells[5]?.textContent.trim() || '—';
+        const connectorPills = cells[6]?.querySelectorAll('.pill-sm') || [];
+        const wrap = document.getElementById('detailConnector');
+        if (connectorPills.length) {
+          wrap.innerHTML = Array.from(connectorPills).map((p) => `<span class="pill">${p.textContent.trim()}</span>`).join('');
+        } else {
+          wrap.textContent = cells[6]?.textContent.trim() || '—';
+        }
+        const sample = USAGE_DETAIL_SAMPLES[idx % USAGE_DETAIL_SAMPLES.length];
+        const tbody = document.getElementById('detailTableBody');
+        tbody.innerHTML = sample.map((r, i) => (
+          `<tr><td class="col-no">${i + 1}</td><td class="col-tool">${r.tool}</td><td class="col-type"><span class="type-badge">${r.type}</span></td></tr>`
+        )).join('');
+        openDialog('usageDetail');
+      });
+    });
+  </script>
+</body>
+</html>
