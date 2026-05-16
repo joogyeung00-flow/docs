@@ -167,9 +167,8 @@
     .mcp-card {
       display: flex; align-items: center; gap: 16px; padding: 16px 20px;
       background: #fff; border: 1px solid var(--slate-200); border-radius: var(--radius);
-      box-shadow: var(--shadow); transition: all .15s ease;
+      box-shadow: var(--shadow);
     }
-    .mcp-card:hover { border-color: var(--slate-300); box-shadow: 0 4px 8px rgba(15,23,42,0.06); }
     .mcp-card .mcp-logo {
       width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
@@ -179,11 +178,18 @@
     .mcp-card .mcp-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .mcp-card .mcp-title-row { display: flex; align-items: center; gap: 8px; }
     .mcp-card .mcp-users {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 12px; color: var(--muted-foreground);
-      padding: 0 0 0 8px;
-      border-left: 1px solid var(--slate-200);
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 500; color: var(--slate-600);
+      padding: 3px 9px;
+      border: 1px solid var(--slate-200);
+      background: #fff;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+      font-family: inherit;
     }
+    .mcp-card .mcp-users:hover { background: var(--slate-50); border-color: var(--slate-300); color: var(--slate-900); }
+    .mcp-card .mcp-users svg { color: var(--slate-400); }
     .mcp-card .mcp-title { font-size: 16px; font-weight: 600; color: var(--slate-950); }
     .mcp-card .mcp-desc { font-size: 13px; color: var(--slate-500); line-height: 1.4; }
     .mcp-card .mcp-scope { font-size: 12px; color: var(--slate-400); margin-top: 2px; }
@@ -328,6 +334,26 @@
     .dialog-detail .field-group { margin-top: 0; }
     .dialog-detail .dlg-footer-detail { display: flex; justify-content: flex-end; gap: 8px; }
 
+    /* 연결 인원 모달 */
+    .dialog.dialog-connected-users { max-width: 640px; }
+    .users-table { overflow: hidden; border: 1px solid var(--slate-200); border-radius: 8px; }
+    .users-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .users-table thead tr { background: color-mix(in srgb, var(--muted) 50%, transparent); border-bottom: 1px solid var(--slate-200); color: var(--muted-foreground); }
+    .users-table th { padding: 8px 12px; font-weight: 500; text-align: left; font-size: 12px; }
+    .users-table th.col-name { width: auto; }
+    .users-table th.col-dept { width: 140px; }
+    .users-table th.col-pos { width: 64px; }
+    .users-table th.col-when { width: 140px; text-align: right; padding-right: 16px; }
+    .users-table tbody tr { border-bottom: 1px solid var(--slate-200); }
+    .users-table tbody tr:last-child { border-bottom: 0; }
+    .users-table tbody tr:hover { background: color-mix(in srgb, var(--muted) 20%, transparent); }
+    .users-table td { padding: 8px 12px; color: var(--slate-900); }
+    .users-table td.col-name { font-weight: 500; }
+    .users-table td.col-dept { color: var(--slate-700); font-size: 13px; }
+    .users-table td.col-pos { color: var(--slate-700); font-size: 13px; }
+    .users-table td.col-when { color: var(--muted-foreground); font-size: 12px; text-align: right; padding-right: 16px; white-space: nowrap; }
+    .users-table-wrap { max-height: 440px; overflow-y: auto; border-radius: 8px; }
+
     .field-group { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
     .field-group .field-label { font-size: 14px; font-weight: 500; color: var(--slate-900); }
     .service-select {
@@ -407,10 +433,10 @@
               <div class="mcp-title-row">
                 <span class="mcp-title">Notion</span>
                 <span class="badge success">활성</span>
-                <span class="mcp-users" title="현재 연결한 인원">
+                <button class="mcp-users" type="button" title="현재 연결한 인원 보기" onclick="openDialog('connectedUsers')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                   <span>24명 연결</span>
-                </span>
+                </button>
               </div>
               <div class="mcp-desc">Notion 워크스페이스에서 페이지, 데이터베이스를 조회하고 관리합니다.</div>
               <div class="mcp-scope" id="notionScope">전체 도구 허용</div>
@@ -570,6 +596,60 @@
       <div class="dlg-footer-detail">
         <button class="btn btn-outline" onclick="closeDialog()">취소</button>
         <button class="btn btn-purple" onclick="confirmServiceConnect()">추가</button>
+      </div>
+
+      <button type="button" class="dlg-close" onclick="closeDialog()" aria-label="닫기">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" data-dialog="connectedUsers">
+    <div class="dialog dialog-detail dialog-connected-users" role="dialog" aria-labelledby="connectedUsersTitle">
+      <div class="dlg-header">
+        <h2 id="connectedUsersTitle">Notion 연결 인원</h2>
+        <p>현재 <strong>24명</strong>이 Notion 커넥터를 연결해 사용하고 있습니다.</p>
+      </div>
+
+      <div class="users-table-wrap">
+        <div class="users-table">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-name">사용자</th>
+                <th class="col-dept">부서</th>
+                <th class="col-pos">직책</th>
+                <th class="col-when">연결 일시</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="col-name">김민준</td><td class="col-dept">AI사업개발실</td><td class="col-pos">실장</td><td class="col-when">2026-05-14 14:08</td></tr>
+              <tr><td class="col-name">이서연</td><td class="col-dept">콘텐츠지원팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-13 18:50</td></tr>
+              <tr><td class="col-name">박지호</td><td class="col-dept">PM3팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-12 15:08</td></tr>
+              <tr><td class="col-name">최예린</td><td class="col-dept">PM3팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-11 10:28</td></tr>
+              <tr><td class="col-name">정시우</td><td class="col-dept">SaaS컨설팅팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-11 19:18</td></tr>
+              <tr><td class="col-name">송인호</td><td class="col-dept">SaaS B/U</td><td class="col-pos">이사</td><td class="col-when">2026-05-10 11:22</td></tr>
+              <tr><td class="col-name">오화정</td><td class="col-dept">피플팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-10 09:45</td></tr>
+              <tr><td class="col-name">유민호</td><td class="col-dept">AI사업개발실</td><td class="col-pos">실장</td><td class="col-when">2026-05-09 16:30</td></tr>
+              <tr><td class="col-name">유성균</td><td class="col-dept">피플팀</td><td class="col-pos">팀장</td><td class="col-when">2026-05-09 14:18</td></tr>
+              <tr><td class="col-name">이성재</td><td class="col-dept">PM2팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-08 17:05</td></tr>
+              <tr><td class="col-name">강구현</td><td class="col-dept">Enterprise운영PM팀</td><td class="col-pos">팀장</td><td class="col-when">2026-05-08 11:50</td></tr>
+              <tr><td class="col-name">강명덕</td><td class="col-dept">SaaS운영개발팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-07 20:12</td></tr>
+              <tr><td class="col-name">강지우</td><td class="col-dept">SaaS CX팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-07 15:42</td></tr>
+              <tr><td class="col-name">강하솔</td><td class="col-dept">SaaS CX팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-07 09:30</td></tr>
+              <tr><td class="col-name">신주경</td><td class="col-dept">PM3팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-06 18:24</td></tr>
+              <tr><td class="col-name">윤지원</td><td class="col-dept">콘텐츠지원팀</td><td class="col-pos">팀장</td><td class="col-when">2026-05-06 14:55</td></tr>
+              <tr><td class="col-name">조현우</td><td class="col-dept">AI사업개발실</td><td class="col-pos">책임</td><td class="col-when">2026-05-05 22:08</td></tr>
+              <tr><td class="col-name">한가람</td><td class="col-dept">SaaS컨설팅팀</td><td class="col-pos">선임</td><td class="col-when">2026-05-05 16:42</td></tr>
+              <tr><td class="col-name">노지훈</td><td class="col-dept">PM3팀</td><td class="col-pos">선임</td><td class="col-when">2026-05-05 13:18</td></tr>
+              <tr><td class="col-name">백서윤</td><td class="col-dept">Enterprise운영PM팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-04 19:30</td></tr>
+              <tr><td class="col-name">임도현</td><td class="col-dept">피플팀</td><td class="col-pos">책임</td><td class="col-when">2026-05-04 11:08</td></tr>
+              <tr><td class="col-name">서가은</td><td class="col-dept">콘텐츠지원팀</td><td class="col-pos">선임</td><td class="col-when">2026-05-03 17:55</td></tr>
+              <tr><td class="col-name">권태영</td><td class="col-dept">SaaS B/U</td><td class="col-pos">책임</td><td class="col-when">2026-05-03 09:42</td></tr>
+              <tr><td class="col-name">홍수아</td><td class="col-dept">AI사업개발실</td><td class="col-pos">선임</td><td class="col-when">2026-05-02 14:36</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <button type="button" class="dlg-close" onclick="closeDialog()" aria-label="닫기">
